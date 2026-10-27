@@ -10,7 +10,7 @@
   "training_seconds": 410.985,
   "provenance": "provided_training_archive",
   "measured_locally": false,
-  "source_label": "同学训练记录",
+  "source_label": "训练记录",
   "source_archive": "20261027-124755.zip",
   "metric_scope": "training_end_validation",
   "metrics": {

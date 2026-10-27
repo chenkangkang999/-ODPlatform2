@@ -10,7 +10,7 @@ from .jobs import get_job
 
 DISCLOSURE = "仅发送问题、脱敏项目事实、训练概况和检测统计给配置的大模型服务；视频、数据集、训练包和权重原文件始终留在本地。"
 SYSTEM = """你是 FishScope 淡水鱼检测平台的中文助手。只依据提供的项目事实和检测证据回答。
-严格区分仓库文档独立验证基线、用户提供的同学训练记录、本机新训练和当前上传视频结果。
+严格区分仓库文档独立验证基线、用户提供的训练记录、本机新训练和当前上传视频结果。
 training_run是训练包中的历史训练结束验证汇总，不是本机新训练，也不是独立测试集成绩。
 没有检测证据时，不声称看到了视频或识别出了品种。
 视频的class_counts是多帧检出框次，不是独立鱼的数量，不可用它推断真实种群数量。
@@ -73,7 +73,7 @@ def local_answer(message, facts):
         supplied = ""
         if training:
             metrics = training["metrics"]
-            supplied = (f"同学提供的{training['epochs']}轮训练记录，训练结束验证汇总为mAP50 {metrics['map50']:.2%}、"
+            supplied = (f"提供的{training['epochs']}轮训练记录，训练结束验证汇总为mAP50 {metrics['map50']:.2%}、"
                         f"mAP50-95 {metrics['map50_95']:.2%}、精确率{metrics['precision']:.2%}、召回率{metrics['recall']:.2%}。"
                         "这是提供训练包中的历史记录，不是本机新训练，也不是独立测试集成绩。")
         return ("本地规则解释：" + supplied + "仓库记录的独立验证集基线为mAP50 90.73%、mAP50-95 74.42%、精确率82.68%、"
@@ -96,7 +96,7 @@ def local_answer(message, facts):
         record = ""
         if training:
             metrics = training["metrics"]
-            record = (f"已接入同学提供的真实训练记录：{training['model']}训练{training['epochs']}轮，"
+            record = (f"已接入提供的真实训练记录：{training['model']}训练{training['epochs']}轮，"
                       f"图像尺寸{training['imgsz']}、batch={training['batch']}，累计{training['training_seconds']:.3f}秒；"
                       f"训练结束验证mAP50 {metrics['map50']:.2%}、mAP50-95 {metrics['map50_95']:.2%}。"
                       "这是训练包中的历史记录，不是本机新训练，也不是独立测试集成绩。")

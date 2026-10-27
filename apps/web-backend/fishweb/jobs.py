@@ -110,7 +110,7 @@ def device_value(params):
 def inference_params(params):
     model_id = str(params.get("model", ""))
     if not model_id:
-        raise ValueError("尚未选择鱼类权重。请把同学训练的33类 fish .pt 权重放到 models/trained，再刷新模型列表。")
+        raise ValueError("尚未选择鱼类权重。请把训练的33类 fish .pt 权重放到 models/trained，再刷新模型列表。")
     resolve_model(model_id)
     result = {"model": model_id, "conf": numeric(params, "conf", .4, .01, .99),
               "iou": numeric(params, "iou", .7, .1, .95),
