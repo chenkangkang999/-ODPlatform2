@@ -1,0 +1,30 @@
+repos:
+  # ruff：格式化 + lint（Rust 实现，替代 black + flake8 + isort）
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff-format
+      - id: ruff
+        args: [--fix]
+
+  # mypy：静态类型检查（只看业务源码，不进 tests）
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
+    hooks:
+      - id: mypy
+        args: ["apps/platform/src/"]
+        additional_dependencies: []
+        # 存量类型债未清，先只报告不阻塞（与 CI 的 mypy 步骤口径一致）。
+        verbose: true
+        stages: [manual]
+
+  # pytest：单元测试（端内测试 + 顶层跨端测试；数据未生成时自动跳过依赖数据的用例）
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: python -m pytest
+        language: system
+        pass_filenames: false
+        always_run: true
+        args: ["apps/platform/tests", "tests", "-q"]
