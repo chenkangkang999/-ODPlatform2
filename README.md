@@ -760,3 +760,15 @@ output:
 | [docs/architecture/ADR-003-runtime-config-precedence.md](docs/architecture/ADR-003-runtime-config-precedence.md) | 运行配置三源合并与优先级 |
 | [docs/architecture/ADR-004-inference-output-and-viz.md](docs/architecture/ADR-004-inference-output-and-viz.md) | 推理输出与可视化 |
 | [docs/architecture/ADR-005-progress-retention-eval-and-label-dir-fix.md](docs/architecture/ADR-005-progress-retention-eval-and-label-dir-fix.md) | 进度反馈 / `runs/` 保留 / 评估与 IoU 口径 / 标签目录缺陷修正 |
+
+## Web 扩展：渔见 FishScope
+
+新增独立的 **Django + Vue 3** 门户，包含项目介绍、数据理解、模型训练、图片/视频推理、仪表盘和智能助手。
+本扩展保留原有平台引擎、训练配置和 Gradio 配置，通过新增入口复用现有能力。
+
+- [安装与使用](docs/WEB_AND_LLM.md)
+- [提交范围与组员交接备注](docs/FISHSCOPE_HANDOFF.md)
+- [Web 后端说明](apps/web-backend/README.fishscope.md)
+
+真实鱼类推理需要单独接入本地权重。大模型目前尚未配置真实 API，未配置时明确使用本地规则解释。
+后续 API 配置放在被 `.gitignore` 排除的 `apps/web-backend/.env`，只提交不含密钥的 `.env.example`。

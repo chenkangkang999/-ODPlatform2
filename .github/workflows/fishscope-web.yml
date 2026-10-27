@@ -1,0 +1,44 @@
+name: FishScope Web
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web-backend/**'
+      - 'apps/web-frontend/**'
+      - 'scripts/start_fish_*.ps1'
+      - '.github/workflows/fishscope-web.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web-backend/**'
+      - 'apps/web-frontend/**'
+      - 'scripts/start_fish_*.ps1'
+      - '.github/workflows/fishscope-web.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/web-frontend/package-lock.json
+      - name: Install Web test dependencies
+        run: python -m pip install -r apps/web-backend/requirements.txt numpy opencv-python-headless
+      - name: Django configuration and tests
+        run: |
+          python apps/web-backend/manage.py check
+          python apps/web-backend/manage.py test fishweb.tests
+      - name: Vue production build
+        working-directory: apps/web-frontend
+        run: |
+          npm ci
+          npm run build

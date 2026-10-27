@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="220" viewBox="0 0 520 220" fill="none">
+  <title>游动的鱼群</title>
+  <desc>七条浅青蓝鱼形与细小气泡，作为页面装饰使用。</desc>
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="92" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#CAEAF2" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#7BBECF" stop-opacity=".58"/>
+    </linearGradient>
+    <g id="fish">
+      <path d="M8 22C23 5 51 3 76 20L91 10L88 23L91 36L76 26C51 43 23 41 8 22Z" fill="url(#body)" stroke="#69AEBF" stroke-opacity=".64" stroke-width="1.1" stroke-linejoin="round"/>
+      <path d="M37 9L47 1L56 11M37 34L45 43L54 33" fill="#A7D5E1" fill-opacity=".42" stroke="#69AEBF" stroke-opacity=".4" stroke-width=".9" stroke-linejoin="round"/>
+      <path d="M27 13C34 18 35 26 29 32M45 21L55 27L46 30" stroke="#69AEBF" stroke-opacity=".53" stroke-width="1" stroke-linecap="round"/>
+      <circle cx="21" cy="21" r="1.65" fill="#5D9FAC" fill-opacity=".8"/>
+      <path d="M9 22H14" stroke="#69AEBF" stroke-opacity=".65" stroke-width="1" stroke-linecap="round"/>
+    </g>
+  </defs>
+  <g opacity=".82" transform="translate(335 73) rotate(-8 46 22) scale(1.25)"><use href="#fish"/></g>
+  <g opacity=".68" transform="translate(217 35) rotate(-12 46 22) scale(.86)"><use href="#fish"/></g>
+  <g opacity=".62" transform="translate(191 123) rotate(5 46 22) scale(1.02)"><use href="#fish"/></g>
+  <g opacity=".58" transform="translate(88 84) rotate(-6 46 22) scale(.76)"><use href="#fish"/></g>
+  <g opacity=".43" transform="translate(331 171) rotate(-9 46 22) scale(.68)"><use href="#fish"/></g>
+  <g opacity=".38" transform="translate(63 166) rotate(8 46 22) scale(.6)"><use href="#fish"/></g>
+  <g opacity=".3" transform="translate(26 32) rotate(-3 46 22) scale(.48)"><use href="#fish"/></g>
+  <g stroke="#81BCCD" stroke-width="1" opacity=".42">
+    <circle cx="461" cy="51" r="4"/><circle cx="477" cy="31" r="2.5"/>
+    <circle cx="473" cy="70" r="1.5"/><circle cx="314" cy="137" r="2"/>
+    <circle cx="162" cy="55" r="2.8"/><circle cx="150" cy="35" r="1.6"/>
+  </g>
+  <g stroke="#A4D5E2" stroke-linecap="round" opacity=".5">
+    <path d="M286 88H317M291 93H305"/>
+    <path d="M140 133H166M147 138H157"/>
+    <path d="M7 108H35M19 113H30"/>
+  </g>
+</svg>

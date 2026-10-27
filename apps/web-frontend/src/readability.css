@@ -1,0 +1,400 @@
+/* Comfortable reading sizes and an aquatic range control. */
+.aquatic-shell { font-size: 15px; line-height: 1.7; }
+.aquatic-shell button, .aquatic-shell input, .aquatic-shell select, .aquatic-shell textarea { font: inherit; }
+.aquatic-shell .site-header .brand { justify-content: center; align-items: center; min-width: 145px; }
+.aquatic-shell .site-header .brand > span:last-child { display: grid; place-items: center; text-align: center; }
+.aquatic-shell .site-header .brand b { font-size: 33px; line-height: 1.15; }
+.aquatic-shell .site-header .brand-symbol { width: 49px; height: 49px; }
+.aquatic-shell .header-inner { grid-template-columns: 160px minmax(0, 1fr) auto; gap: 20px; }
+.aquatic-shell .top-nav .nav-tab { min-height: 64px; padding: 10px 14px; gap: 9px; }
+.aquatic-shell .top-nav .nav-tab > span:not(.ai-label) { font-size: 16px; line-height: 1.25; letter-spacing: 0; }
+.aquatic-shell .top-nav .nav-tab small { font-size: 11px; line-height: 1.25; letter-spacing: .2px; margin-top: 5px; }
+.aquatic-shell .top-nav .nav-tab > svg { width: 21px; height: 21px; }
+.aquatic-shell .guide-trigger { font-size: 14px; padding: 11px 14px; }
+.aquatic-shell .workspace-pill { font-size: 12px; }
+.aquatic-shell .water-workspace .breadcrumb, .aquatic-shell .water-workspace .top-actions,
+.aquatic-shell .water-workspace .repo-link, .aquatic-shell .water-workspace .local-pill { font-size: 13px; }
+.aquatic-shell .water-workspace .topbar { height: 60px; }
+.aquatic-shell .water-workspace .page-title { gap: 20px; margin-bottom: 30px; }
+.aquatic-shell .water-workspace .page-title h1 { font-size: 34px; line-height: 1.35; }
+.aquatic-shell .water-workspace .page-title h1 > span { font-size: 30px; }
+.aquatic-shell .water-workspace .page-title h1 + p { font-size: 16px; line-height: 1.75; margin-top: 12px; color: #557b90; }
+.aquatic-shell .water-workspace .eyebrow,
+.aquatic-shell .water-workspace .card-head .eyebrow,
+.aquatic-shell .water-workspace .card-eyebrow,
+.aquatic-shell .water-workspace .insight-card .eyebrow,
+.aquatic-shell .water-workspace .evidence-card .eyebrow { font-size: 12px; line-height: 1.5; letter-spacing: 1.5px; }
+.aquatic-shell .water-workspace .version-tag { font-size: 12px; }
+.aquatic-shell .water-workspace .hero { min-height: 440px; }
+.aquatic-shell .water-workspace .hero-copy { padding: 38px 38px 40px; }
+.aquatic-shell .water-workspace .hero h2 { font-size: 56px; line-height: 1.3; letter-spacing: 2px; margin: 24px 0 20px; }
+.aquatic-shell .water-workspace .hero p { font-size: 16px; line-height: 1.85; }
+.aquatic-shell .water-workspace .hero-tag { font-size: 13px; line-height: 1.5; }
+.aquatic-shell .water-workspace .hero-grid { grid-template-columns: minmax(0, 1fr) 300px; }
+.aquatic-shell .water-workspace .quick-panel { padding: 27px 25px 0; }
+.aquatic-shell .water-workspace .quick-panel h3 { font-size: 23px; line-height: 1.4; }
+.aquatic-shell .water-workspace .quick-panel > .muted { font-size: 14px; }
+.aquatic-shell .water-workspace .status-list { gap: 24px; margin-top: 28px; }
+.aquatic-shell .water-workspace .status-list > div { font-size: 14px; gap: 10px; }
+.aquatic-shell .water-workspace .status-list b { font-size: 13px; }
+.aquatic-shell .water-workspace .quick-bottom, .aquatic-shell .water-workspace .quick-bottom button { font-size: 13px; }
+.aquatic-shell .water-workspace .metric-card { padding: 25px 22px 21px; grid-template-columns: 43px minmax(0, 1fr); gap: 9px 13px; }
+.aquatic-shell .water-workspace .metric-icon { width: 43px; height: 43px; }
+.aquatic-shell .water-workspace .metric-card > div > span,
+.aquatic-shell .water-workspace .plain-metric > span { font-size: 14px; line-height: 1.5; }
+.aquatic-shell .water-workspace .metric-card strong,
+.aquatic-shell .water-workspace .plain-metric strong { font-size: 37px; line-height: 1.25; }
+.aquatic-shell .water-workspace .metric-card strong small,
+.aquatic-shell .water-workspace .plain-metric strong small { font-size: 14px; }
+.aquatic-shell .water-workspace .metric-foot,
+.aquatic-shell .water-workspace .plain-metric > small { font-size: 12px; line-height: 1.6; }
+.aquatic-shell .water-workspace .plain-metric .small-value { font-size: 27px; }
+.aquatic-shell .water-workspace .section-heading h2 { font-size: 25px; }
+.aquatic-shell .water-workspace .workflow button { padding: 26px 24px; }
+.aquatic-shell .water-workspace .workflow h3 { font-size: 20px; margin-top: 18px; }
+.aquatic-shell .water-workspace .workflow p { font-size: 14px; line-height: 1.7; max-width: 190px; }
+.aquatic-shell .water-workspace .workflow-no { font-size: 12px; }
+.aquatic-shell .water-workspace .button,
+.aquatic-shell .water-workspace .insight-card > .button,
+.aquatic-shell .water-workspace .evidence-card .button { font-size: 15px; min-height: 44px; padding: 11px 16px; gap: 10px; }
+.aquatic-shell .water-workspace .text-button,
+.aquatic-shell .water-workspace .section-heading .text-button,
+.aquatic-shell .water-workspace .result-actions > .text-button { font-size: 14px; line-height: 1.65; }
+.aquatic-shell .water-workspace .insight-card h3,
+.aquatic-shell .water-workspace .gradio-card h3 { font-size: 19px; line-height: 1.5; }
+.aquatic-shell .water-workspace .insight-card p,
+.aquatic-shell .water-workspace .gradio-card p { font-size: 13px; line-height: 1.8; }
+.aquatic-shell .water-workspace .insight-card { gap: 18px; padding: 25px; flex-wrap: wrap; }
+.aquatic-shell .water-workspace .insight-card > div:nth-child(2) { flex: 1; min-width: 220px; }
+.aquatic-shell .water-workspace .source-note,
+.aquatic-shell .water-workspace .footer,
+.aquatic-shell .water-workspace .footer > span:first-child { font-size: 12px; line-height: 1.8; }
+.aquatic-shell .water-workspace .notice,
+.aquatic-shell .water-workspace .notice button,
+.aquatic-shell .water-workspace .error-message { font-size: 14px; line-height: 1.75; }
+.aquatic-shell .water-workspace .notice { align-items: flex-start; }
+.aquatic-shell .water-workspace .badge { font-size: 12px; line-height: 1.5; padding: 7px 10px; }
+.aquatic-shell .water-workspace .muted,
+.aquatic-shell .water-workspace .small { font-size: 13px; line-height: 1.8; }
+.aquatic-shell .water-workspace .card { padding: 28px; min-width: 0; }
+.aquatic-shell .water-workspace .card-head { gap: 16px; margin-bottom: 23px; }
+.aquatic-shell .water-workspace .card-head h3 { font-size: 21px; line-height: 1.5; }
+.aquatic-shell .water-workspace .card-head h3 > small { font-size: 14px; }
+.aquatic-shell .water-workspace .data-banner h2 { font-size: 27px; line-height: 1.5; }
+.aquatic-shell .water-workspace .data-banner p { font-size: 15px; line-height: 1.8; }
+.aquatic-shell .water-workspace .split-chart { gap: 27px; flex-wrap: wrap; }
+.aquatic-shell .water-workspace .donut { width: 170px; height: 170px; flex-shrink: 0; }
+.aquatic-shell .water-workspace .donut b { font-size: 32px; }
+.aquatic-shell .water-workspace .donut small { font-size: 12px; }
+.aquatic-shell .water-workspace .chart-legend > div { font-size: 14px; gap: 9px; }
+.aquatic-shell .water-workspace .chart-legend b { font-size: 16px; }
+.aquatic-shell .water-workspace .chart-legend small { font-size: 12px; }
+.aquatic-shell .water-workspace .quality-step > span { font-size: 13px; width: 34px; height: 34px; flex-shrink: 0; }
+.aquatic-shell .water-workspace .quality-step b { font-size: 16px; }
+.aquatic-shell .water-workspace .quality-step p { font-size: 14px; line-height: 1.8; }
+.aquatic-shell .water-workspace .search-input { font-size: 14px !important; min-width: 0; width: 220px; padding: 11px 13px !important; }
+.aquatic-shell .water-workspace .class-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.aquatic-shell .water-workspace .class-grid > div { padding: 19px 17px; min-height: 84px; display: flex; align-items: center; gap: 14px; }
+.aquatic-shell .water-workspace .class-grid > div > svg,
+.aquatic-shell .water-workspace .class-grid > div > img { position: static; width: 39px; height: 32px; flex: 0 0 39px; }
+.aquatic-shell .water-workspace .class-grid b { font-size: 16px; line-height: 1.5; font-weight: 500; overflow-wrap: anywhere; }
+.aquatic-shell .water-workspace .empty-small { font-size: 15px; }
+.aquatic-shell .water-workspace label { font-size: 15px; line-height: 1.6; margin-bottom: 22px; }
+.aquatic-shell .water-workspace input:not([type=range],[type=file]),
+.aquatic-shell .water-workspace select,
+.aquatic-shell .water-workspace textarea { font-size: 15px; line-height: 1.6; padding: 11px 13px; min-height: 46px; }
+.aquatic-shell .water-workspace .card .form-row { gap: 18px; }
+.aquatic-shell .water-workspace .empty-state h4,
+.aquatic-shell .water-workspace .inference-empty h4 { font-size: 21px; line-height: 1.5; }
+.aquatic-shell .water-workspace .empty-state p { font-size: 15px; line-height: 1.8; }
+.aquatic-shell .water-workspace .empty-state small { font-size: 12px; line-height: 1.8; }
+.aquatic-shell .water-workspace .record-card h3 { font-size: 19px; }
+.aquatic-shell .water-workspace .record-card > div { font-size: 14px; gap: 15px; flex-wrap: wrap; }
+.aquatic-shell .water-workspace .record-card b { font-size: 29px; }
+.aquatic-shell .water-workspace .record-card b small { font-size: 13px; }
+.aquatic-shell .water-workspace .record-card p { font-size: 13px; line-height: 1.8; }
+.aquatic-shell .water-workspace .record-card .eyebrow { font-size: 12px; }
+.aquatic-shell .water-workspace .job-id,
+.aquatic-shell .water-workspace .log-box { font-size: 13px; line-height: 1.8; overflow-wrap: anywhere; }
+.aquatic-shell .water-workspace .dropzone h4 { font-size: 20px; line-height: 1.5; overflow-wrap: anywhere; }
+.aquatic-shell .water-workspace .dropzone p { font-size: 15px; line-height: 1.7; }
+.aquatic-shell .water-workspace .dropzone small,
+.aquatic-shell .water-workspace .privacy-note,
+.aquatic-shell .water-workspace .input-preview span { font-size: 12px; line-height: 1.8; }
+.aquatic-shell .water-workspace .privacy-note { align-items: flex-start; }
+.aquatic-shell .water-workspace .privacy-note svg { margin-top: 4px; flex-shrink: 0; }
+.aquatic-shell .water-workspace .slider-label b { font-size: 14px; color: #26758f; padding: 5px 11px; background: #dff2fa; border: 1px solid #b8ddea; border-radius: 7px; }
+.aquatic-shell .water-workspace .advanced,
+.aquatic-shell .water-workspace .advanced summary { font-size: 14px; line-height: 1.8; }
+.aquatic-shell .water-workspace .empty-steps { font-size: 13px; gap: 10px; flex-wrap: wrap; }
+.aquatic-shell .water-workspace .processing-state h4 { font-size: 21px; }
+.aquatic-shell .water-workspace .processing-state p { font-size: 15px; }
+.aquatic-shell .water-workspace .result-summary span { font-size: 14px; }
+.aquatic-shell .water-workspace .result-summary b { font-size: 34px; }
+.aquatic-shell .water-workspace .result-summary small { font-size: 14px; }
+.aquatic-shell .water-workspace .result-bars > div { font-size: 14px; }
+.aquatic-shell .water-workspace .evaluation-bars > div { font-size: 14px; gap: 16px; }
+.aquatic-shell .water-workspace .evaluation-bars span { width: 110px; flex-shrink: 0; }
+.aquatic-shell .water-workspace .evaluation-bars b { font-size: 16px; min-width: 78px; }
+.aquatic-shell .water-workspace .evaluation-bars small { font-size: 12px; }
+.aquatic-shell .water-workspace .environment-row { font-size: 15px; gap: 16px; padding: 18px 0; }
+.aquatic-shell .water-workspace .environment-row b { font-size: 14px; text-align: right; }
+.aquatic-shell .water-workspace table,
+.aquatic-shell .water-workspace .table-scroll table,
+.aquatic-shell .water-workspace th,
+.aquatic-shell .water-workspace td { font-size: 14px; line-height: 1.65; }
+.aquatic-shell .water-workspace th, .aquatic-shell .water-workspace td { padding: 14px; }
+.aquatic-shell .water-workspace .mono { font-size: 12px; }
+.aquatic-shell .water-workspace .status-chip { font-size: 12px; }
+.aquatic-shell .water-workspace .experiment-row { font-size: 13px; line-height: 1.8; }
+.aquatic-shell .water-workspace .chat-panel { padding: 0; }
+.aquatic-shell .water-workspace .chat-top { padding: 25px; }
+.aquatic-shell .water-workspace .chat-top b { font-size: 18px; }
+.aquatic-shell .water-workspace .chat-top small { font-size: 12px; line-height: 1.7; }
+.aquatic-shell .water-workspace .chat-mode { font-size: 11px; }
+.aquatic-shell .water-workspace .message-avatar { font-size: 14px; width: 34px; height: 34px; }
+.aquatic-shell .water-workspace .message-author { font-size: 13px; }
+.aquatic-shell .water-workspace .message-author small { font-size: 11px; line-height: 1.8; display: inline-block; }
+.aquatic-shell .water-workspace .message-content { font-size: 15px; line-height: 1.9; padding: 17px 19px; color: #3f6b83; }
+.aquatic-shell .water-workspace .message-disclosure { font-size: 11px; line-height: 1.8; }
+.aquatic-shell .water-workspace .prompt-grid button { font-size: 14px; padding: 14px; line-height: 1.6; }
+.aquatic-shell .water-workspace .chat-form textarea { font-size: 15px; min-height: 66px; padding: 0; }
+.aquatic-shell .water-workspace .send-button { width: 40px; height: 40px; }
+.aquatic-shell .water-workspace .chat-footer { font-size: 12px; line-height: 1.8; }
+.aquatic-shell .water-workspace .evidence-card h3 { font-size: 20px; }
+.aquatic-shell .water-workspace .context-empty p { font-size: 15px; }
+.aquatic-shell .water-workspace .context-empty small { font-size: 13px; line-height: 1.8; }
+.aquatic-shell .water-workspace .context-badge { font-size: 12px; }
+.aquatic-shell .water-workspace .evidence-card > p { font-size: 14px; line-height: 1.8; }
+.aquatic-shell .water-workspace .assistant-note h4 { font-size: 18px; }
+.aquatic-shell .water-workspace .assistant-note p { font-size: 14px; line-height: 1.9; }
+.aquatic-shell .water-workspace .typing { font-size: 14px; }
+.aquatic-shell .guide-modal > h2 { font-size: 27px; line-height: 1.5; }
+.aquatic-shell .guide-modal > .muted { font-size: 14px; line-height: 1.8; }
+.aquatic-shell .guide-steps b { font-size: 17px; line-height: 1.6; }
+.aquatic-shell .guide-steps p { font-size: 14px; line-height: 1.8; }
+.aquatic-shell .guide-steps li::before { font-size: 12px; }
+.aquatic-shell .modal-bottom > span { font-size: 12px; line-height: 1.8; }
+.aquatic-shell .modal-bottom .button { font-size: 14px; min-height: 44px; }
+
+/* Higher contrast keeps the enlarged type clear on the white and blue cards. */
+.aquatic-shell .top-nav .nav-tab { color: #496f83; }
+.aquatic-shell .top-nav .nav-tab small { color: #638295; }
+.aquatic-shell .workspace-pill, .aquatic-shell .guide-trigger { color: #52788e; }
+.aquatic-shell .water-workspace .muted,
+.aquatic-shell .water-workspace .small,
+.aquatic-shell .water-workspace .eyebrow,
+.aquatic-shell .water-workspace .card-head .eyebrow,
+.aquatic-shell .water-workspace .card-eyebrow,
+.aquatic-shell .water-workspace .metric-card > div > span,
+.aquatic-shell .water-workspace .plain-metric > span,
+.aquatic-shell .water-workspace .metric-foot,
+.aquatic-shell .water-workspace .plain-metric > small,
+.aquatic-shell .water-workspace .source-note,
+.aquatic-shell .water-workspace .footer,
+.aquatic-shell .water-workspace .footer > span:first-child,
+.aquatic-shell .water-workspace .chart-legend span,
+.aquatic-shell .water-workspace .chart-legend small,
+.aquatic-shell .water-workspace .donut small,
+.aquatic-shell .water-workspace .quick-bottom,
+.aquatic-shell .water-workspace .status-list span,
+.aquatic-shell .water-workspace .privacy-note,
+.aquatic-shell .water-workspace .dropzone small,
+.aquatic-shell .water-workspace .message-author,
+.aquatic-shell .water-workspace .message-author small,
+.aquatic-shell .water-workspace .message-disclosure,
+.aquatic-shell .water-workspace .chat-top small,
+.aquatic-shell .water-workspace .chat-footer,
+.aquatic-shell .water-workspace .context-empty small { color: #56798d; }
+.aquatic-shell .water-workspace label,
+.aquatic-shell .water-workspace .class-grid b,
+.aquatic-shell .water-workspace .quality-step b,
+.aquatic-shell .water-workspace .environment-row,
+.aquatic-shell .water-workspace .environment-row b,
+.aquatic-shell .water-workspace th,
+.aquatic-shell .water-workspace td,
+.aquatic-shell .water-workspace .assistant-note p,
+.aquatic-shell .water-workspace .quality-step p,
+.aquatic-shell .water-workspace .workflow p,
+.aquatic-shell .water-workspace .record-card p,
+.aquatic-shell .water-workspace .data-banner p,
+.aquatic-shell .water-workspace .dropzone p,
+.aquatic-shell .water-workspace .empty-state p,
+.aquatic-shell .water-workspace .context-empty p,
+.aquatic-shell .water-workspace .prompt-grid button { color: #456e85; }
+.aquatic-shell .water-workspace .insight-card p,
+.aquatic-shell .water-workspace .gradio-card p { color: #557b90; }
+.aquatic-shell .water-workspace .status-list b { color: #657d8b; }
+.aquatic-shell .water-workspace .state-ready { color: #267687; }
+.aquatic-shell .water-workspace .state-wait { color: #8a7047; }
+.aquatic-shell .guide-modal > .muted, .aquatic-shell .guide-steps p,
+.aquatic-shell .modal-bottom > span { color: #56798d; }
+
+/* Preserve native range semantics; only its visual track and thumb are replaced. */
+.aquatic-shell .water-workspace .slider-label input[type=range] {
+  --fish-thumb: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='30' viewBox='0 0 44 30'%3E%3Cpath d='M11 15C16 5 29 3 40 15C29 27 16 25 11 15Z' fill='%232c96b2' stroke='%231d718e' stroke-width='1.2'/%3E%3Cpath d='M12 15L2 6V24L12 15Z' fill='%237bc5d9' stroke='%231d718e' stroke-width='1.2' stroke-linejoin='round'/%3E%3Cpath d='M23 8L19 3L30 6M23 22L20 27L31 23' fill='%237bc5d9' stroke='%231d718e' stroke-width='1.1' stroke-linejoin='round'/%3E%3Ccircle cx='33' cy='13' r='2.2' fill='white'/%3E%3Ccircle cx='33.6' cy='13.1' r='1' fill='%23174e68'/%3E%3Cpath d='M28 10Q24 15 28 20' stroke='%23b8ebf5' stroke-width='1.2' fill='none'/%3E%3C/svg%3E");
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 38px;
+  padding: 0;
+  margin: 16px 0 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  overflow: visible;
+}
+.aquatic-shell .water-workspace .slider-label input[type=range]::-webkit-slider-runnable-track {
+  height: 9px;
+  border: 1px solid #9dcede;
+  border-radius: 999px;
+  background: linear-gradient(to right, #4bacc4 0%, #4bacc4 var(--range-progress, 40%), #e0f2f9 var(--range-progress, 40%), #e0f2f9 100%);
+  box-shadow: inset 0 1px 2px #17617a10;
+}
+.aquatic-shell .water-workspace .slider-label input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 44px;
+  height: 30px;
+  margin-top: -12px;
+  border: 0;
+  border-radius: 0;
+  background: var(--fish-thumb) center / 44px 30px no-repeat;
+  filter: drop-shadow(0 2px 2px #286c8533);
+}
+.aquatic-shell .water-workspace .slider-label input[type=range]::-moz-range-track {
+  height: 8px;
+  border: 1px solid #9dcede;
+  border-radius: 999px;
+  background: #e0f2f9;
+}
+.aquatic-shell .water-workspace .slider-label input[type=range]::-moz-range-progress { height: 8px; border-radius: 999px; background: #4bacc4; }
+.aquatic-shell .water-workspace .slider-label input[type=range]::-moz-range-thumb {
+  width: 44px;
+  height: 30px;
+  border: 0;
+  border-radius: 0;
+  background: var(--fish-thumb) center / 44px 30px no-repeat;
+  filter: drop-shadow(0 2px 2px #286c8533);
+}
+.aquatic-shell .water-workspace .slider-label input[type=range]:focus-visible { outline: 3px solid #65b9d0; outline-offset: 4px; }
+.aquatic-shell .water-workspace .slider-label input[type=range]:disabled { cursor: not-allowed; opacity: .55; }
+
+@media (min-width: 1600px) {
+  .aquatic-shell .water-workspace .class-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+@media (max-width: 1380px) {
+  .aquatic-shell .header-inner { grid-template-columns: 1fr auto; padding: 15px 34px 10px; gap: 11px 22px; }
+  .aquatic-shell .site-header .brand { justify-self: start; }
+  .aquatic-shell .header-actions { grid-column: 2; grid-row: 1; justify-self: end; }
+  .aquatic-shell .top-nav { grid-column: 1 / -1; grid-row: 2; justify-content: center; width: 100%; margin: 0; padding: 0 0 5px; gap: 9px; }
+  .aquatic-shell .top-nav .nav-tab { min-width: 128px; }
+  .aquatic-shell .workspace-pill { display: inline-flex; }
+  .aquatic-shell .water-decor { inset: 145px 0 0; }
+}
+@media (max-width: 1050px) {
+  .aquatic-shell .top-nav { justify-content: flex-start; overflow-x: auto; scrollbar-width: thin; scrollbar-color: #a8d5e6 transparent; }
+  .aquatic-shell .water-workspace .hero-grid { grid-template-columns: minmax(0, 1fr); }
+  .aquatic-shell .water-workspace .quick-panel { display: none; }
+  .aquatic-shell .water-workspace .class-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .aquatic-shell .water-workspace .assistant-layout { grid-template-columns: 1fr; }
+  .aquatic-shell .water-workspace .card .form-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .aquatic-shell .header-inner { padding: 13px 20px 8px; gap: 10px 15px; }
+  .aquatic-shell .site-header .brand b { font-size: 31px; }
+  .aquatic-shell .site-header .brand-symbol { width: 43px; height: 43px; }
+  .aquatic-shell .top-nav { gap: 7px; margin-right: 0; padding-right: 0; }
+  .aquatic-shell .top-nav .nav-tab { min-width: 116px; min-height: 53px; padding: 10px 13px; }
+  .aquatic-shell .top-nav .nav-tab > span:not(.ai-label) { font-size: 15px; }
+  .aquatic-shell .top-nav .nav-tab small { display: none; }
+  .aquatic-shell .top-nav .nav-tab > svg { width: 19px; height: 19px; }
+  .aquatic-shell .workspace-pill { display: none; }
+  .aquatic-shell .guide-trigger { font-size: 13px; padding: 9px 11px; }
+  .aquatic-shell .water-workspace main { padding: 15px 22px 0; }
+  .aquatic-shell .water-workspace .topbar { padding: 0 22px; height: 54px; }
+  .aquatic-shell .water-workspace .breadcrumb,
+  .aquatic-shell .water-workspace .repo-link { font-size: 12px; }
+  .aquatic-shell .water-workspace .page-title h1 { font-size: 27px; }
+  .aquatic-shell .water-workspace .page-title h1 > span { font-size: 23px; }
+  .aquatic-shell .water-workspace .page-title h1 + p { font-size: 14px; }
+  .aquatic-shell .water-workspace .eyebrow { font-size: 11px; letter-spacing: 1px; }
+  .aquatic-shell .water-workspace .hero { min-height: 430px; }
+  .aquatic-shell .water-workspace .hero h2 { font-size: 43px; line-height: 1.35; letter-spacing: 1px; }
+  .aquatic-shell .water-workspace .hero-copy { padding: 32px 29px 36px; }
+  .aquatic-shell .water-workspace .hero p { font-size: 14px; }
+  .aquatic-shell .water-workspace .hero-tag { font-size: 12px; }
+  .aquatic-shell .water-workspace .metric-card { padding: 21px 17px; grid-template-columns: 36px minmax(0, 1fr); gap: 10px; }
+  .aquatic-shell .water-workspace .metric-icon { width: 36px; height: 36px; }
+  .aquatic-shell .water-workspace .metric-card strong { font-size: 32px; }
+  .aquatic-shell .water-workspace .metric-card > div > span { font-size: 13px; }
+  .aquatic-shell .water-workspace .metric-foot { font-size: 11px; }
+  .aquatic-shell .water-workspace .section-heading { align-items: flex-start; gap: 15px; }
+  .aquatic-shell .water-workspace .section-heading h2 { font-size: 22px; }
+  .aquatic-shell .water-workspace .section-heading .text-button { font-size: 12px; }
+  .aquatic-shell .water-workspace .card { padding: 24px; }
+  .aquatic-shell .water-workspace .card-head h3 { font-size: 20px; }
+  .aquatic-shell .water-workspace .data-banner h2 { font-size: 23px; }
+  .aquatic-shell .water-workspace .data-banner p { font-size: 14px; }
+  .aquatic-shell .water-workspace .metric-grid.three { grid-template-columns: 1fr; }
+  .aquatic-shell .water-workspace .metric-grid.three .plain-metric { padding: 22px 24px; }
+  .aquatic-shell .water-workspace .plain-metric strong { font-size: 34px; }
+  .aquatic-shell .water-workspace .plain-metric .small-value { font-size: 25px; }
+  .aquatic-shell .water-workspace .metric-grid.three .plain-metric > small { font-size: 12px; }
+  .aquatic-shell .water-workspace .search-input { max-width: 180px !important; font-size: 14px !important; }
+  .aquatic-shell .water-workspace .class-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .aquatic-shell .water-workspace .class-grid > div { padding: 16px 13px; gap: 10px; }
+  .aquatic-shell .water-workspace .class-grid > div > svg,
+  .aquatic-shell .water-workspace .class-grid > div > img { width: 32px; height: 28px; flex-basis: 32px; }
+  .aquatic-shell .water-workspace .class-grid b { font-size: 15px; }
+  .aquatic-shell .water-workspace .assistant-layout > .stack { grid-template-columns: 1fr; }
+  .aquatic-shell .water-workspace .chat-panel { padding: 0; }
+  .aquatic-shell .water-workspace .chat-top { padding: 22px; }
+  .aquatic-shell .water-workspace .messages { padding: 25px 20px; }
+  .aquatic-shell .water-workspace .prompt-grid { grid-template-columns: 1fr; margin: 0 20px 20px; }
+  .aquatic-shell .water-workspace .chat-form { margin: 0 20px; }
+  .aquatic-shell .water-workspace .chat-footer { padding: 15px 20px 20px; }
+  .aquatic-shell .water-workspace .assistant-page > .page-title .badge { font-size: 11px; max-width: 150px; }
+  .aquatic-shell .guide-modal > h2 { font-size: 24px; }
+}
+@media (max-width: 500px) {
+  .aquatic-shell .header-inner { padding-inline: 17px; }
+  .aquatic-shell .water-workspace main { padding-inline: 17px; }
+  .aquatic-shell .water-workspace .topbar { padding-inline: 19px; }
+  .aquatic-shell .water-workspace .page-title { flex-wrap: wrap; }
+  .aquatic-shell .water-workspace .page-title h1 { font-size: 26px; }
+  .aquatic-shell .water-workspace .page-title h1 > span { font-size: 21px; }
+  .aquatic-shell .water-workspace .hero { min-height: 415px; }
+  .aquatic-shell .water-workspace .hero-copy { padding: 28px 25px 33px; }
+  .aquatic-shell .water-workspace .hero h2 { font-size: 37px; letter-spacing: 0; }
+  .aquatic-shell .water-workspace .hero p { font-size: 14px; }
+  .aquatic-shell .water-workspace .hero-tag { font-size: 11px; }
+  .aquatic-shell .water-workspace .metric-card { padding: 19px 14px; grid-template-columns: 1fr; }
+  .aquatic-shell .water-workspace .metric-icon { width: 34px; height: 34px; }
+  .aquatic-shell .water-workspace .metric-foot { grid-column: 1; min-height: 35px; }
+  .aquatic-shell .water-workspace .metric-card strong { font-size: 32px; }
+  .aquatic-shell .water-workspace .workflow button { padding: 22px 18px; }
+  .aquatic-shell .water-workspace .workflow h3 { font-size: 19px; }
+  .aquatic-shell .water-workspace .workflow p { font-size: 13px; max-width: none; }
+  .aquatic-shell .water-workspace .card { padding: 21px; }
+  .aquatic-shell .water-workspace .card-head { flex-wrap: wrap; }
+  .aquatic-shell .water-workspace .card-head .search-input { max-width: none !important; width: 100%; padding: 11px 13px !important; }
+  .aquatic-shell .water-workspace .class-grid > div { gap: 8px; padding: 16px 11px; }
+  .aquatic-shell .water-workspace .class-grid > div > svg,
+  .aquatic-shell .water-workspace .class-grid > div > img { width: 30px; flex-basis: 30px; }
+  .aquatic-shell .water-workspace .class-grid b { font-size: 14px; }
+  .aquatic-shell .water-workspace .card .form-row { grid-template-columns: 1fr; gap: 0; }
+  .aquatic-shell .water-workspace .chat-panel { padding: 0; }
+  .aquatic-shell .water-workspace .chat-top { gap: 10px; flex-wrap: wrap; }
+  .aquatic-shell .water-workspace .chat-top b { font-size: 17px; }
+  .aquatic-shell .water-workspace .chat-top small { font-size: 11px; }
+  .aquatic-shell .water-workspace .message-content { font-size: 14px; padding: 15px; }
+  .aquatic-shell .water-workspace .evaluation-bars > div { flex-wrap: wrap; gap: 9px; font-size: 13px; }
+  .aquatic-shell .water-workspace .evaluation-bars span { width: 105px; }
+  .aquatic-shell .water-workspace .evaluation-bars b { min-width: 70px; font-size: 15px; }
+  .aquatic-shell .water-workspace .evaluation-bars > div > div { min-width: 40px; }
+  .aquatic-shell .water-workspace .footer { flex-wrap: wrap; gap: 12px; }
+  .aquatic-shell .guide-modal { padding: 30px 22px; }
+  .aquatic-shell .guide-modal > h2 { font-size: 22px; }
+}

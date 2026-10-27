@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "verified_on": "2026-10-27",
+  "repository": "https://github.com/chenkangkang999/-ODPlatform2",
+  "scope": "Values marked documented are statements in the upstream repository, not measurements performed on this computer.",
+  "dataset": {
+    "name": "fish",
+    "display_name": "BengalDeltaFish",
+    "provenance": "documented",
+    "source": "README.md: 当前业务场景与数据集状态; apps/platform/configs/datasets/fish.yaml",
+    "license_as_documented": "CC BY 4.0",
+    "images": 4560,
+    "labels": 4560,
+    "instances": 6034,
+    "class_count": 33,
+    "class_names": ["Batashi", "Bele", "Chanda", "Chapila", "Chela", "Foli", "Ilish", "Kajuli", "Kayakanta", "Koi", "Magur", "Mola", "Mrigel", "Pabda", "Pangas", "Puti", "Rui", "Rupchada", "Shol", "Sorputi", "Taki", "Tarabaim", "Telapia", "Tengra", "Veda", "Vetki", "ayer", "boyal", "chitol", "kalbaus", "katol", "kholshe", "shing"],
+    "split": {"strategy": "stratified_multilabel", "seed": 42, "train": 3652, "val": 458, "test": 450},
+    "contract_fingerprint": "e0272ec1daf7d634455dc5f453428f4791913cad6e0da5916e6415279b638727",
+    "validation_passed_checks_as_documented": 15,
+    "class_distribution": null,
+    "class_distribution_note": "The repository does not include the ignored fish labels, so per-class sample counts must be calculated from local data before display."
+  },
+  "documented_baseline": {
+    "provenance": "documented",
+    "source": "README.md: 评估指标说明 / 5) 本次业务数据集（fish，33 类淡水鱼）的实测数值",
+    "hardware": "RTX 4060 Laptop 8GB",
+    "model": "yolo11n",
+    "imgsz": 512,
+    "batch": 8,
+    "epochs": 10,
+    "training_end_metrics": {"map50": 0.9095, "map50_95": 0.7454, "precision": 0.8270, "recall": 0.8872},
+    "independent_evaluation": {
+      "split": "val",
+      "images": 458,
+      "ground_truth_boxes": 661,
+      "class_count": 33,
+      "conf": 0.001,
+      "map50": 0.9073,
+      "map50_95": 0.7442,
+      "precision": 0.8268,
+      "recall": 0.8874
+    },
+    "confidence_sweep": {
+      "best_f1_reference_conf": 0.4,
+      "precision": 0.8349,
+      "recall": 0.8884,
+      "f1": 0.8608,
+      "target_precision": 0.90,
+      "target_reached": false,
+      "note": "The confidence 0.4 point is a best-F1 reference; it did not reach target precision 0.90."
+    },
+    "speed_as_documented": {"inference_ms_per_image": 2.28, "total_ms_per_image": 4.07, "training_minutes_approx": 7},
+    "per_class_ap50_95_examples": {"kholshe": 0.925, "Veda": 0.907, "Chapila": 0.879, "Rui": 0.387, "Tengra": 0.496, "Ilish": 0.555}
+  },
+  "existing_gradio": {
+    "source": "apps/platform/src/od_platform/visualization/gradio_app.py",
+    "entrypoint": "odp-demo",
+    "optional_dependency_group": "ui",
+    "supported_input": "one or more static images",
+    "outputs": ["annotated images", "detection rows with class confidence and box coordinates", "summary"],
+    "notes": "The existing Gradio UI does not implement uploaded-video inference or LLM explanation."
+  },
+  "local_inspection": {
+    "provenance": "local_file_presence_inspection_only",
+    "checked_locations": ["current cloned repository", "existing local platform checkout", "candidate local fish checkout"],
+    "cloned_repository_fish_weights_found": false,
+    "cloned_repository_fish_images_found": false,
+    "d_odplatform2_exists": false,
+    "d_odplatform_exists": true,
+    "other_weights_found": ["models/pretrained/yolo11n.pt", "models/trained/train-20261022-115319-smoke_shapes-yolo11n-best.pt", "models/trained/train-20261022-115759-2-smoke_shapes-yolo11n-best.pt"],
+    "note": "These other weights are not trained for the 33 fish classes and must not be presented as a fish detector. This bounded inspection does not claim a whole-device search."
+  }
+}

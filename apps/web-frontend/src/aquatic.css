@@ -1,0 +1,374 @@
+/* FishScope aquatic theme. Imported after the original functional layout. */
+:root {
+  --teal: #258ba1;
+  --deep: #174e68;
+  --mint: #c9edf5;
+  --muted: #6f8d9c;
+  --line: #c5e3ee;
+  --paper: #fffffff5;
+  --ink: #244c61;
+  color: var(--ink);
+  background: #e6f4fa;
+}
+body {
+  background-color: #79c4e7;
+  background-image: linear-gradient(180deg, #e6f6ff55, #d4efff26 54%, #b8e0f52e), url('/images/fish-underwater-bg.png');
+  background-size: auto, cover;
+  background-position: center, center top;
+  background-repeat: no-repeat, no-repeat;
+  background-attachment: fixed;
+}
+::selection { background: #b5e6f1; color: #174e68; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, summary:focus-visible { outline-color: #39a5c1; }
+.aquatic-shell { position: relative; isolation: isolate; }
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #f9fdfff2;
+  border-bottom: 1px solid #b9dfec;
+  box-shadow: 0 5px 25px #377f9c0b;
+  backdrop-filter: blur(18px);
+}
+.header-inner {
+  max-width: 1440px;
+  min-height: 89px;
+  margin: 0 auto;
+  padding: 12px 34px;
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+}
+.site-header .brand { padding: 0; gap: 10px; color: #205873; white-space: nowrap; }
+.site-header .brand-symbol { width: 43px; height: 43px; color: #328da8; border-color: #98cfdc; background: #e6f6fa; box-shadow: inset 0 0 0 5px #f6fdff; }
+.site-header .brand b { font-size: 26px; color: #174f68; }
+.site-header .brand-dot { color: #38a5bf; }
+.site-header .brand small { color: #6994a7; font-size: 7px; margin-top: 7px; letter-spacing: 3px; }
+.top-nav { display: flex; justify-content: center; align-items: center; gap: 5px; min-width: 0; }
+.top-nav .nav-tab {
+  min-height: 51px;
+  padding: 11px 13px;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: #6c899a;
+  background: transparent;
+  position: relative;
+  justify-content: center;
+  text-align: left;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background .2s ease, color .2s ease, border-color .2s ease;
+}
+.top-nav .nav-tab > svg { color: #79a5b6; width: 18px; height: 18px; }
+.top-nav .nav-tab > span:not(.ai-label) { font-size: 11px; letter-spacing: .2px; }
+.top-nav .nav-tab small { color: #8aa4b2; font-size: 7px; margin-top: 4px; letter-spacing: .4px; }
+.top-nav .nav-tab.active { color: #1c718d; background: #e0f3fa; border-color: #b4dfea; box-shadow: 0 3px 9px #458fa30a; }
+.top-nav .nav-tab.active > svg { color: #2184a1; }
+.top-nav .nav-tab.active small { color: #6598ab; }
+.top-nav .nav-tab.active::after { content: ''; position: absolute; left: 30%; right: 30%; bottom: -5px; height: 2px; background: #46a8c0; border-radius: 2px; }
+.top-nav .nav-tab:hover:not(.active) { color: #236f88; border-color: #d8ebf2; background: #edf8fc; }
+.top-nav .nav-dot, .top-nav .ai-label { display: none; }
+.header-actions { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+.workspace-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 9px; color: #6d94a4; }
+.workspace-pill > i { width: 5px; height: 5px; border-radius: 50%; background: #5cb1b0; box-shadow: 0 0 0 3px #87cdca15; }
+.workspace-pill .wait { background: #c6ae7d; }
+.guide-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 12px; border: 1px solid #c4e3ee; border-radius: 8px; background: #fff; color: #5f8ba0; font-size: 10px; }
+.guide-trigger svg { color: #6aa6bb; }
+.guide-trigger:hover { background: #eaf7fc; border-color: #94c9dc; }
+.app-shell.aquatic-shell .main-shell.water-workspace { margin-left: 0; min-height: calc(100vh - 89px); width: 100%; position: relative; z-index: 1; }
+.water-workspace .topbar { max-width: 1320px; height: 54px; border: 0; margin: auto; padding: 0 40px; background: transparent; }
+.water-workspace .breadcrumb { color: #86a7b4; font-size: 10px; }
+.water-workspace .breadcrumb b { color: #547f94; }
+.water-workspace .crumb-slash { color: #aecbd5; }
+.water-workspace .top-actions { color: #7ba0b1; gap: 19px; }
+.water-workspace .local-pill { color: #74a1af; }
+.water-workspace .local-pill i { background: #76b9bc; }
+.water-workspace .avatar { color: #659db0; border-color: #c6e2ec; background: #e5f5fa; }
+.water-workspace main { max-width: 1320px; padding: 15px 40px 0; position: relative; }
+.water-decor { position: fixed; inset: 90px 0 0; pointer-events: none; overflow: hidden; z-index: 0; }
+.decor-fish { position: absolute; width: 310px; right: -50px; top: 29%; opacity: .2; transform: rotate(-12deg); }
+.water-bubbles > i { position: absolute; display: block; width: 36px; height: 36px; border: 1px solid #69bbd24d; background: radial-gradient(circle at 32% 25%, #ffffff6b, #d2eff400 58%); border-radius: 50%; box-shadow: inset 1px 2px 4px #ffffff7a; }
+.water-bubbles > i:nth-child(1) { left: 3%; top: 28%; width: 28px; height: 28px; }
+.water-bubbles > i:nth-child(2) { right: 3.5%; top: 14%; width: 46px; height: 46px; }
+.water-bubbles > i:nth-child(3) { left: 1.8%; top: 69%; width: 54px; height: 54px; }
+.water-bubbles > i:nth-child(4) { right: 6%; top: 64%; width: 19px; height: 19px; }
+.water-bubbles > i:nth-child(5) { right: 2%; top: 78%; width: 32px; height: 32px; }
+.water-bubbles > i:nth-child(6) { left: 5%; top: 8%; width: 15px; height: 15px; opacity: .7; }
+.water-workspace .page-title { margin-bottom: 25px; }
+.water-workspace .page-title { padding: 23px 25px; border: 1px solid #c3e4f0; border-radius: 14px; background: #f7fcfff0; box-shadow: 0 7px 24px #174e6810; }
+.water-workspace .topbar { background: #f4fbffe8; border-radius: 0 0 12px 12px; }
+.water-workspace .source-note { padding: 13px 16px; border: 1px solid #c8e4ee; border-radius: 10px; background: #f7fcfff0; }
+.water-workspace .footer { padding: 18px; border-radius: 10px 10px 0 0; background: #f7fcffef; }
+.water-workspace .eyebrow { color: #7ea1b1; }
+.water-workspace h1 { color: #224f66; }
+.water-workspace h1 > span { color: #6c9cb1; }
+.water-workspace h1 + p { color: #7a9aaa; }
+.water-workspace .version-tag { color: #7ca3b5; background: #e8f6fb; border-color: #c5e2ec; }
+.water-workspace .version-tag span { color: #4485a1; }
+.water-workspace .hero-grid { grid-template-columns: minmax(0, 1fr) 280px; gap: 22px; }
+.water-workspace .hero { min-height: 360px; border: 1px solid #a2d6eb; border-radius: 15px; box-shadow: 0 10px 25px #236c9b12; }
+.water-workspace .hero-gradient { background: linear-gradient(90deg, #103b58ed 0%, #174362bb 36%, #164b6140 70%, #173b5000), linear-gradient(0deg, #0b3a50aa, transparent 45%); }
+.water-workspace .hero-copy { padding: 30px 37px 55px; }
+.water-workspace .hero h2 { color: #f7fdff; }
+.water-workspace .hero h2 span { color: #bfeefb; }
+.water-workspace .hero p { color: #c2e1ec; }
+.water-workspace .hero-tag { color: #d6f3fc; border-color: #a7dceb77; background: #225d7580; }
+.water-workspace .hero-tag i { background: #8ad4e8; }
+.water-workspace .hero-caption { color: #bedbe9c2; }
+.water-workspace .hero-orbit { border-color: #c2effb26; }
+.water-workspace .quick-panel { background: linear-gradient(155deg, #f2fbffed, #dff1f9f5); border-color: #b5daeb; border-radius: 15px; position: relative; overflow: hidden; padding: 26px 23px 0; box-shadow: 0 7px 20px #468ea408; }
+.water-workspace .quick-panel::after { content: ''; position: absolute; width: 165px; height: 74px; right: -42px; bottom: 52px; background: url('/images/fish-school.svg') center / contain no-repeat; opacity: .11; pointer-events: none; transform: rotate(-8deg); }
+.water-workspace .card-eyebrow { color: #7e9fae; }
+.water-workspace .quick-panel h3 { color: #355e75; }
+.water-workspace .muted { color: #849fac; }
+.water-workspace .status-list span, .water-workspace .status-list svg { color: #7099ab; }
+.water-workspace .state-neutral { color: #759aaa; }
+.water-workspace .state-ready { color: #318e9e; }
+.water-workspace .quick-bottom { border-color: #c8e1ea; color: #84a4b3; }
+.water-workspace .quick-bottom button { color: #4a8ba6; }
+.water-workspace .live-dot { background: #4dabbc; box-shadow: 0 0 0 3px #79c4d016; }
+.water-workspace .button-primary, .water-workspace .send-button { background: #2c8ca5; border-color: #2c8ca5; color: #f6fcff; }
+.water-workspace .button-primary:hover:not(:disabled), .water-workspace .send-button:hover:not(:disabled) { background: #24768e; border-color: #24768e; }
+.water-workspace .button-mint { background: #c6ebf8; border-color: #c6e8f4; color: #286482; box-shadow: 0 6px 15px #0d466222; }
+.water-workspace .button-light { background: #f4fbff; border-color: #bedeea; color: #4b89a1; }
+.water-workspace .button-outline { border-color: #b5dbe9; color: #5a8da5; background: #f6fcff80; }
+.water-workspace .text-button { color: #5f95ad; }
+.water-workspace .text-button:hover { color: #207c99; }
+.water-workspace .card, .water-workspace .plain-metric, .water-workspace .metric-card, .water-workspace .gradio-card { border-color: #c1e0ed; background: #fffffff2; box-shadow: 0 6px 20px #23638a05; border-radius: 12px; }
+.water-workspace .metric-card { position: relative; overflow: hidden; }
+.water-workspace .metric-card::after { content: ''; position: absolute; right: -16px; top: -17px; width: 59px; height: 59px; border: 1px solid #d1ecf580; border-radius: 50%; pointer-events: none; }
+.water-workspace .metric-card strong, .water-workspace .plain-metric strong { color: #365f77; }
+.water-workspace .metric-card strong small, .water-workspace .plain-metric strong small { color: #82a0b0; }
+.water-workspace .metric-card > div > span, .water-workspace .plain-metric > span { color: #789aa9; }
+.water-workspace .metric-foot, .water-workspace .plain-metric > small { color: #94acb8; }
+.water-workspace .metric-icon { background: #e5f4fa; color: #5c9cb5; }
+.water-workspace .metric-icon.blue { background: #e3f0fb; color: #699abb; }
+.water-workspace .metric-icon.amber { background: #f7f2e7; color: #b6a06a; }
+.water-workspace .metric-icon.violet { background: #eaeffa; color: #879cc0; }
+.water-workspace .workflow button { border-color: #c5e3ed; background: #ecf8fcf0; border-radius: 11px; box-shadow: 0 4px 12px #3b7fa308; }
+.water-workspace .workflow button:hover { background: #e0f3fb; border-color: #9ecee0; }
+.water-workspace .workflow-icon, .water-workspace .workflow-arrow { color: #6aa4bb; }
+.water-workspace .workflow-no { color: #97b2bf; }
+.water-workspace .workflow h3 { color: #527f96; }
+.water-workspace .workflow p { color: #8ca9b6; }
+.water-workspace .insight-card, .water-workspace .assistant-note { background: linear-gradient(125deg, #e4f4fbef, #f5fbfef2); border-color: #bddfeb; }
+.water-workspace .insight-icon { color: #73a5b9; border-color: #b9dce9; }
+.water-workspace .insight-card h3, .water-workspace .assistant-note h4 { color: #59889e; }
+.water-workspace .insight-card p, .water-workspace .assistant-note p { color: #89a6b5; }
+.water-workspace .gradio-card > svg { color: #8bb0c0; }
+.water-workspace .gradio-card p { color: #91a9b5; }
+.water-workspace .source-note { color: #8faab6; }
+.water-workspace .footer { border-color: #c8e0e9; color: #8ba8b6; }
+.water-workspace .footer > span:first-child { color: #78a0b1; }
+.water-workspace .footer i { background: #6eafbc; }
+.water-workspace .badge { color: #6194aa; border-color: #c1e0eb; background: #eaf7fc; }
+.water-workspace .notice:not(.warning) { color: #5d92a5; background: #e6f5fb; border-color: #bcdeeb; }
+.water-workspace .card-head > svg { color: #85aebe; }
+.water-workspace .card-head h3 > small { color: #87a7b6; }
+.water-workspace .data-banner { background: linear-gradient(110deg, #dbf0f9f2, #f0faffed); border-color: #b7ddeb; color: #3e7794; position: relative; overflow: hidden; }
+.water-workspace .data-banner::after { content: ''; position: absolute; inset: 0; background: url('/images/water-caustics.svg') right center / 520px auto no-repeat; opacity: .2; pointer-events: none; }
+.water-workspace .data-banner .eyebrow, .water-workspace .data-banner p { color: #85a7b8; }
+.water-workspace .donut { background: conic-gradient(#348eaa 0 80.1%, #8ec5dc 80.1% 90.1%, #d9bd7b 90.1% 100%); }
+.water-workspace .donut:before { background: #fcfeff; }
+.water-workspace .donut b { color: #53859e; }
+.water-workspace .donut small, .water-workspace .chart-legend small { color: #96b0be; }
+.water-workspace .chart-legend span { color: #7d9eb0; }
+.water-workspace .quality-step > span { color: #70a0b6; border-color: #cce5f0; background: #ecf8fd; }
+.water-workspace .quality-step p { color: #8ca9b9; }
+.water-workspace .class-grid > div { background: #f2faff; border-color: #cee7f1; }
+.water-workspace .class-grid b { color: #5c8da6; }
+.water-workspace .class-grid svg { color: #8db7cb; }
+.water-workspace .class-grid > div > span { color: #a6c2cf; }
+.water-workspace label { color: #658fa6; }
+.water-workspace input:not([type=range],[type=file]), .water-workspace select, .water-workspace textarea { color: #4f7d96; background: #f6fcff; border-color: #c7e2ee; }
+.water-workspace input::placeholder, .water-workspace textarea::placeholder { color: #9eb7c5; }
+.water-workspace input[type=range] { accent-color: #3b97b2; }
+.water-workspace .empty-state > span { color: #88b2c5; border-color: #d1e6ef; background: #f0f9fd; }
+.water-workspace .empty-state h4, .water-workspace .inference-empty h4 { color: #6b9ab0; }
+.water-workspace .empty-state p { color: #95b0bf; }
+.water-workspace .empty-state small { color: #afc5cf; }
+.water-workspace .record-card { background: #e9f5fb; border-color: #c7e2ef; }
+.water-workspace .record-card h3, .water-workspace .record-card b { color: #5c91aa; }
+.water-workspace .record-card p, .water-workspace .record-card > div, .water-workspace .record-card b small, .water-workspace .record-card .eyebrow { color: #92aebd; }
+.water-workspace .job-id { color: #8caab9; }
+.water-workspace .progress-track { background: #e0f0f7; }
+.water-workspace .progress-track span { background: #58a6c0; }
+.water-workspace .log-box { background: #163d51; color: #bedeea; }
+.water-workspace .dropzone { background: #edf8fdf5; border-color: #a9d6e7; }
+.water-workspace .dropzone:hover, .water-workspace .dropzone.dragging { background: #e2f5fc; border-color: #62aecb; }
+.water-workspace .upload-symbol { background: #def1f9; border-color: #badde9; color: #6dabc4; }
+.water-workspace .dropzone h4 { color: #6194ad; }
+.water-workspace .dropzone p, .water-workspace .privacy-note { color: #8aaaba; }
+.water-workspace .dropzone small { color: #9db9c7; }
+.water-workspace .advanced { color: #7ca2b5; border-color: #d2e8f2; }
+.water-workspace .scan-empty { border-color: #c5e1ed; outline-color: #f2fbff; }
+.water-workspace .scan-empty:after { border-color: #c9e4ee; }
+.water-workspace .empty-steps { color: #9dbac8; }
+.water-workspace .empty-steps i { color: #bdd4de; }
+.water-workspace .spinner { border-color: #dceef6; border-top-color: #68acc5; }
+.water-workspace .processing-state { color: #76a3b8; }
+.water-workspace .result-summary > div { background: #eef9fd; border-color: #d3e8f1; }
+.water-workspace .result-summary span { color: #8bafc0; }
+.water-workspace .result-summary b { color: #5e9ab6; }
+.water-workspace .result-bars > div { color: #7ea6b9; }
+.water-workspace .result-bars > div > div, .water-workspace .evaluation-bars > div > div { background: #e8f4fa; }
+.water-workspace .result-bars i, .water-workspace .evaluation-bars i { background: #70aec7; }
+.water-workspace .evaluation-bars { color: #6c9ab0; }
+.water-workspace .evaluation-bars > div { color: #789fb3; }
+.water-workspace .evaluation-bars > div:nth-child(2) i { background: #96c5d8; }
+.water-workspace .evaluation-bars > div:nth-child(3) i { background: #b5bbc6; }
+.water-workspace .evaluation-bars > div:nth-child(4) i { background: #9ebecb; }
+.water-workspace .evaluation-bars small { color: #9bb7c5; }
+.water-workspace .environment-row { color: #8eaabb; border-color: #e0edf3; }
+.water-workspace .environment-row b { color: #7b9eb1; }
+.water-workspace th { color: #8fabb9; background: #eff8fc; }
+.water-workspace td { color: #7d9eaf; border-color: #e1eef4; }
+.water-workspace .status-chip { color: #80a6b9; background: #e9f5fa; }
+.water-workspace .status-chip.completed, .water-workspace .status-chip.succeeded { background: #e1f3f5; color: #65a2aa; }
+.water-workspace .experiment-row { color: #8eabba; border-color: #deedf3; }
+.water-workspace .chat-top { background: #f1faff; border-color: #d7eaf3; }
+.water-workspace .assistant-avatar { background: #e1f2f9; color: #70aac1; border-color: #bfe0ee; }
+.water-workspace .chat-top small { color: #92b1c2; }
+.water-workspace .chat-mode { background: #e7f6fc; color: #83adc2; border-color: #c9e3ef; }
+.water-workspace .message-avatar { background: #eef8fd; color: #83b0c4; border-color: #cbe4ef; }
+.water-workspace .message-author { color: #83a7ba; }
+.water-workspace .message-author small { background: #eef8fd; color: #9bb8c6; }
+.water-workspace .message-content { color: #658ca2; background: #f0f8fc; border-color: #dbeaf3; }
+.water-workspace .message-disclosure { color: #9bb7c6; }
+.water-workspace .message.user .message-content { background: #e0f1f9; border-color: #c4e0ef; color: #4f8aa5; }
+.water-workspace .message.user .message-avatar { background: #ddefF7; }
+.water-workspace .prompt-grid button { background: #f7fcff; border-color: #d4e8f3; color: #83aabd; }
+.water-workspace .prompt-grid button:hover { background: #eaf7fd; }
+.water-workspace .prompt-grid svg { color: #a3c3d3; }
+.water-workspace .chat-form { background: #f5fbff; border-color: #c9e2ef; }
+.water-workspace .chat-form textarea { background: transparent; border: 0; }
+.water-workspace .chat-footer { color: #9bb6c6; }
+.water-workspace .context-empty { color: #a0becd; }
+.water-workspace .context-empty svg { color: #8db7cb; }
+.water-workspace .context-empty p { color: #84a9bc; }
+.water-workspace .context-empty small { color: #a0bac8; }
+.water-workspace .context-badge { background: #e4f4fb; color: #7baabd; }
+.water-workspace .evidence-card > p { color: #8baebf; }
+.water-workspace .assistant-note > svg { color: #8eb9cc; }
+.water-workspace .typing { color: #a1becb; }
+.water-workspace .typing > i { background: #95b9c9; }
+.aquatic-shell .modal-backdrop { background: #123e6099; }
+.aquatic-shell .guide-modal { background: #fbfeff; border-color: #bddfed; }
+.aquatic-shell .guide-modal > h2 { color: #5186a1; }
+.aquatic-shell .icon-button { color: #8aafc1; }
+.aquatic-shell .guide-steps li:before { background: #eaf7fd; border-color: #c6e2ef; color: #83adc2; }
+.aquatic-shell .guide-steps b { color: #739fb6; }
+.aquatic-shell .guide-steps p { color: #94b3c3; }
+.aquatic-shell .modal-bottom { border-color: #dcecf4; }
+.aquatic-shell .modal-bottom > span { color: #9bb7c6; }
+
+@media (min-width: 1600px) {
+  .water-workspace main { padding-top: 24px; }
+  .water-workspace .hero { min-height: 390px; }
+}
+@media (max-width: 1240px) {
+  .header-inner { padding: 12px 28px; grid-template-columns: 145px minmax(0, 1fr) auto; gap: 13px; }
+  .top-nav { gap: 2px; }
+  .top-nav .nav-tab { padding: 10px 10px; gap: 6px; }
+  .top-nav .nav-tab > span:not(.ai-label) { font-size: 10px; }
+  .top-nav .nav-tab > svg { width: 16px; height: 16px; }
+  .workspace-pill { display: none; }
+  .guide-trigger { padding: 10px; }
+  .water-workspace main { padding-inline: 34px; }
+  .water-workspace .topbar { padding-inline: 34px; }
+  .water-workspace .hero-grid { grid-template-columns: minmax(0, 1fr) 260px; }
+  .water-workspace .quick-panel { padding-inline: 21px; }
+}
+@media (max-width: 1000px) {
+  .header-inner { padding: 12px 24px; grid-template-columns: 135px minmax(0, 1fr) auto; gap: 9px; }
+  .site-header .brand b { font-size: 23px; }
+  .site-header .brand-symbol { width: 37px; height: 37px; }
+  .site-header .brand-symbol svg { width: 28px; height: 28px; }
+  .site-header .brand small { font-size: 6px; letter-spacing: 2px; }
+  .top-nav .nav-tab { padding: 10px 8px; }
+  .top-nav .nav-tab > svg { display: none; }
+  .water-workspace .quick-panel { display: flex; }
+  .water-workspace .hero-grid { grid-template-columns: minmax(0, 1fr) 230px; gap: 18px; }
+  .water-workspace .hero h2 { font-size: 44px; }
+  .water-workspace .hero-copy { padding-left: 30px; }
+  .water-workspace .metric-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .water-workspace .metric-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .water-workspace .metric-card { padding: 19px 15px; grid-template-columns: 30px 1fr; gap: 6px 9px; }
+  .water-workspace .metric-icon { width: 30px; height: 30px; }
+  .water-workspace .metric-card strong { font-size: 25px; }
+  .water-workspace .metric-foot { font-size: 7px; }
+  .water-workspace .workflow { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .water-workspace .workflow button { padding: 20px 16px; }
+  .water-workspace .workflow p { font-size: 8px; max-width: 135px; }
+}
+@media (max-width: 820px) {
+  .header-inner { grid-template-columns: 1fr auto; gap: 12px; padding: 14px 24px 11px; }
+  .site-header .brand b { font-size: 24px; }
+  .top-nav { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; overflow-x: auto; gap: 5px; padding: 2px 0 6px; scrollbar-width: none; -ms-overflow-style: none; }
+  .top-nav::-webkit-scrollbar { display: none; }
+  .top-nav .nav-tab { padding: 10px 13px; gap: 7px; min-height: 43px; }
+  .top-nav .nav-tab > svg { display: block; width: 16px; height: 16px; }
+  .top-nav .nav-tab > span:not(.ai-label) { font-size: 11px; }
+  .top-nav .nav-tab small { display: none; }
+  .top-nav .nav-tab.active::after { bottom: -4px; }
+  .header-actions { grid-column: 2; grid-row: 1; }
+  .workspace-pill { display: inline-flex; }
+  .water-workspace main { padding: 13px 25px 0; }
+  .water-workspace .topbar { padding-inline: 25px; height: 48px; }
+  .water-workspace .hero-grid { grid-template-columns: 1fr; }
+  .water-workspace .quick-panel { display: none; }
+  .water-workspace .hero { min-height: 350px; }
+  .water-workspace .hero h2 { font-size: 47px; }
+  .water-workspace .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .water-workspace .metric-card { padding: 21px; grid-template-columns: 36px 1fr; }
+  .water-workspace .metric-icon { width: 36px; height: 36px; }
+  .water-workspace .metric-card strong { font-size: 28px; }
+  .water-workspace .workflow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .water-workspace .workflow p { font-size: 9px; max-width: 170px; }
+  .water-workspace .home-bottom { grid-template-columns: 1fr; }
+  .water-decor { inset: 125px 0 0; }
+  .decor-fish { width: 230px; opacity: .13; right: -100px; }
+}
+@media (max-width: 500px) {
+  .header-inner { padding: 13px 17px 9px; gap: 10px; }
+  .site-header .brand-symbol { width: 37px; height: 37px; }
+  .site-header .brand b { font-size: 23px; }
+  .site-header .brand small { font-size: 6px; margin-top: 5px; letter-spacing: 2.4px; }
+  .header-actions { gap: 8px; }
+  .workspace-pill { display: none; }
+  .guide-trigger { padding: 8px 10px; font-size: 9px; }
+  .top-nav { gap: 4px; margin-right: -17px; padding-right: 17px; }
+  .top-nav .nav-tab { padding: 10px 12px; min-height: 41px; border-radius: 7px; }
+  .top-nav .nav-tab > span:not(.ai-label) { font-size: 10px; }
+  .top-nav .nav-tab > svg { width: 15px; height: 15px; }
+  .water-workspace main { padding: 12px 17px 0; }
+  .water-workspace .topbar { padding-inline: 19px; height: 45px; }
+  .water-workspace .top-actions { gap: 13px; }
+  .water-workspace .local-pill { display: none; }
+  .water-workspace .page-title { margin-bottom: 22px; }
+  .water-workspace .page-title h1 { font-size: 22px; }
+  .water-workspace .page-title h1 > span { font-size: 19px; }
+  .water-workspace .version-tag { display: none; }
+  .water-workspace .hero { min-height: 348px; border-radius: 13px; }
+  .water-workspace .hero-copy { padding: 28px 25px 52px; }
+  .water-workspace .hero h2 { font-size: 45px; letter-spacing: 6px; }
+  .water-workspace .hero p { font-size: 9px; }
+  .water-workspace .hero-caption { left: 25px; right: 20px; font-size: 4.5px; }
+  .water-workspace .metric-card { padding: 18px 13px; grid-template-columns: 30px 1fr; gap: 6px 9px; }
+  .water-workspace .metric-card strong { font-size: 25px; }
+  .water-workspace .metric-icon { width: 30px; height: 30px; }
+  .water-workspace .metric-foot { font-size: 6px; }
+  .water-workspace .metric-grid.three { gap: 8px; }
+  .water-workspace .metric-card > div > span { font-size: 8px; }
+  .water-workspace .workflow button { padding: 19px 15px; }
+  .water-workspace .workflow p { font-size: 8px; max-width: 125px; }
+  .water-workspace .card { border-radius: 11px; }
+  .water-workspace .chat-panel { padding: 0; }
+  .water-workspace .assistant-page h1 > span { font-size: 16px; }
+  .water-bubbles > i:nth-child(2), .water-bubbles > i:nth-child(3) { opacity: .6; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aquatic-shell *, .aquatic-shell *::before, .aquatic-shell *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

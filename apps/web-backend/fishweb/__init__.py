@@ -1,0 +1,1 @@
+"""FishScope local web application."""

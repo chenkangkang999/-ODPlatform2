@@ -89,3 +89,13 @@ temp/
 # 运行期临时落点: D7 的 log_rename 落点、ultralytics 在 cwd 缓存的权重
 logs/
 weights/
+
+# Web portal: dependencies, local runtime and credentials
+node_modules/
+.env
+.env.*
+!.env.example
+apps/web-backend/.local/
+apps/web-backend/*.sqlite3
+.web-runtime/
+models/checkpoints/*.pt
