@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" fill="none">
+  <title>浅水光纹</title>
+  <desc>用于渔见页面的装饰性水面背景，柔和浅蓝水色与自然折射光纹。</desc>
+  <defs>
+    <linearGradient id="water" x1="170" y1="0" x2="1450" y2="1040" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F0FCFF"/>
+      <stop offset=".44" stop-color="#D5F0F8"/>
+      <stop offset="1" stop-color="#ADD9EA"/>
+    </linearGradient>
+    <radialGradient id="sunlight" cx="0" cy="0" r="1" gradientTransform="translate(540 90) rotate(50) scale(1040 690)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="white" stop-opacity=".91"/>
+      <stop offset=".58" stop-color="#F9FFFF" stop-opacity=".26"/>
+      <stop offset="1" stop-color="#F9FFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="deep" cx="0" cy="0" r="1" gradientTransform="translate(1540 930) rotate(-138) scale(1060 530)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#70BAD5" stop-opacity=".24"/>
+      <stop offset="1" stop-color="#70BAD5" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-20%" y="-25%" width="140%" height="150%">
+      <feGaussianBlur stdDeviation="2.2"/>
+    </filter>
+    <filter id="haze" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="24"/>
+    </filter>
+    <pattern id="refraction" width="548" height="378" patternUnits="userSpaceOnUse" patternTransform="rotate(-8)">
+      <g stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M-26 61C32 28 55 51 89 34C118 19 139 8 171 21C204 34 205 62 233 71C264 81 293 62 317 83C346 108 340 142 371 150C401 158 435 140 462 167C489 193 504 184 555 177" stroke-width="2.4" opacity=".72"/>
+        <path d="M89 34C77 62 87 80 77 108C67 136 28 132 14 164C-2 202 36 218 26 247C15 280-8 283-23 306" stroke-width="1.8" opacity=".67"/>
+        <path d="M233 71C228 106 200 107 204 133C209 167 250 169 251 197C252 230 215 229 205 257C194 287 220 308 209 334C201 353 186 363 178 387" stroke-width="2.5" opacity=".7"/>
+        <path d="M77 108C111 113 121 133 150 137C173 140 188 125 204 133" stroke-width="1.5" opacity=".6"/>
+        <path d="M14 164C49 160 54 183 84 179C116 176 122 155 150 157C183 160 195 190 221 195C232 197 240 193 251 197" stroke-width="2.1" opacity=".73"/>
+        <path d="M371 150C366 176 342 185 346 211C351 244 387 249 393 277C398 302 377 330 390 354C402 377 434 375 447 390" stroke-width="1.8" opacity=".61"/>
+        <path d="M26 247C59 250 75 229 108 239C138 248 146 278 173 277C188 276 194 262 205 257" stroke-width="2.1" opacity=".72"/>
+        <path d="M251 197C281 194 290 218 318 217C331 217 338 212 346 211" stroke-width="1.8" opacity=".7"/>
+        <path d="M108 239C105 275 78 281 81 312C83 337 105 352 98 383" stroke-width="1.7" opacity=".6"/>
+        <path d="M209 334C243 330 257 350 291 339C317 331 323 299 348 294C368 290 377 280 393 277" stroke-width="2.3" opacity=".72"/>
+        <path d="M462 167C480 143 464 113 482 89C503 61 525 81 551 57" stroke-width="1.8" opacity=".65"/>
+        <path d="M393 277C421 272 440 296 467 289C495 282 495 252 524 248C539 245 545 248 560 250" stroke-width="2.2" opacity=".73"/>
+        <path d="M-8 351C28 353 41 331 67 337C79 339 86 350 99 351" stroke-width="1.7" opacity=".57"/>
+        <path d="M317 83C334 53 319 24 336-4M482 89C459 70 433 80 411 61C392 46 400 15 380-4" stroke-width="1.6" opacity=".59"/>
+      </g>
+    </pattern>
+  </defs>
+  <path fill="url(#water)" d="M0 0h1600v1000H0z"/>
+  <path fill="url(#sunlight)" d="M0 0h1600v1000H0z"/>
+  <path fill="url(#deep)" d="M0 0h1600v1000H0z"/>
+  <g filter="url(#haze)" opacity=".45" stroke="#FFFFFF" stroke-width="20">
+    <path d="M-100 218C201 91 450 288 739 177S1257 27 1680 135"/>
+    <path d="M-90 777C251 652 413 824 697 732S1255 518 1695 672"/>
+  </g>
+  <path fill="url(#refraction)" opacity=".31" d="M0 0h1600v1000H0z"/>
+  <path fill="url(#refraction)" opacity=".2" filter="url(#soft)" transform="translate(5 4)" d="M-5-4h1600v1000H-5z"/>
+  <g stroke="#FFFFFF" stroke-linecap="round">
+    <path d="M-70 380C161 276 294 429 497 356C657 298 733 299 869 336C1078 393 1181 268 1389 305C1482 321 1555 362 1657 337" stroke-width="1.2" opacity=".33"/>
+    <path d="M-70 397C161 293 294 446 497 373C657 315 733 316 869 353C1078 410 1181 285 1389 322C1482 338 1555 379 1657 354" stroke-width=".8" opacity=".18"/>
+    <path d="M-87 917C139 803 295 937 516 877C743 816 800 848 959 892C1148 944 1304 783 1690 854" stroke-width="1.4" opacity=".38"/>
+  </g>
+  <g fill="#FFFFFF" opacity=".58">
+    <circle cx="139" cy="113" r="2"/><circle cx="1114" cy="177" r="1.5"/>
+    <circle cx="1437" cy="390" r="2.2"/><circle cx="300" cy="681" r="1.5"/>
+    <circle cx="1015" cy="811" r="2"/><circle cx="1506" cy="836" r="1.4"/>
+  </g>
+</svg>

@@ -6,7 +6,10 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 ROOT = BASE_DIR.parents[1]
 SECRET_KEY = os.environ.get("FISH_DJANGO_SECRET_KEY", "local-preview-only-fishvision")
 DEBUG = False
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "[::1]", "testserver"]
+# 默认仅允许本机回环；云端部署（如创空间容器）设置环境变量 FISH_ALLOWED_HOSTS=* 放开。
+ALLOWED_HOSTS = os.environ.get(
+    "FISH_ALLOWED_HOSTS", "127.0.0.1,localhost,[::1],testserver"
+).split(",")
 ROOT_URLCONF = "fishweb.urls"
 MIDDLEWARE = ["django.middleware.security.SecurityMiddleware", "fishweb.views.LocalOnlyMiddleware"]
 INSTALLED_APPS = []

@@ -1,0 +1,28 @@
+# 版本控制 / 虚拟环境
+.git
+.gitignore
+**/.venv/
+**/venv/
+**/env/
+**/node_modules/
+
+# Python 缓存
+**/__pycache__/
+**/*.py[cod]
+**/*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# 数据集 / 训练运行产物（不进镜像）
+data/raw/
+data/processed/
+runs/
+apps/platform/logging/
+
+# 日志 / 密钥 / 临时
+*.log
+.env
+.env.*
+tmp/
+temp/

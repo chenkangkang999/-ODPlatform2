@@ -99,3 +99,6 @@ apps/web-backend/.local/
 apps/web-backend/*.sqlite3
 .web-runtime/
 models/checkpoints/*.pt
+
+# ModelScope 创空间部署打包目录（临时产物，独立 git 仓库，不进 GitHub）
+fishspace_deploy/

@@ -1,5 +1,6 @@
 import json
 import mimetypes
+import os
 import re
 from pathlib import Path
 from urllib.parse import urlparse
@@ -19,7 +20,9 @@ class LocalOnlyMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        if request.META.get("REMOTE_ADDR", "127.0.0.1") not in {"127.0.0.1", "::1"}:
+        # 本机回环限制：云端部署（如创空间容器，平台反代后 REMOTE_ADDR 不是 127.0.0.1）
+        # 设置环境变量 FISH_PUBLIC=1 即放开；不设置时仍只允许本机预览。
+        if os.environ.get("FISH_PUBLIC") != "1" and request.META.get("REMOTE_ADDR", "127.0.0.1") not in {"127.0.0.1", "::1"}:
             return error("此服务仅供本机预览。", 403)
         if request.method not in {"GET", "HEAD", "OPTIONS"}:
             if request.headers.get("Sec-Fetch-Site") == "cross-site":
