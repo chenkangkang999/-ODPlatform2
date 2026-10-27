@@ -1,0 +1,29 @@
+path: data/processed/synth
+train: images/train
+val: images/val
+test: images/test
+names:
+  0: red_block
+  1: green_block
+  2: blue_block
+nc: 3
+odp_meta:
+  schema_version: 1
+  dataset_name: synth
+  source_format: yolo
+  task: detect
+  tool_version: odp-transform/0.4
+  created_at: '2026-10-27T12:14:02'
+  contract_fingerprint: 8c8a9aa4d15eec698da67b87327ecb640d8fe3d83f29b1a0a0df15f625c0abef
+  manifest_path: runs/data_pipeline/20261027-121402/manifest.json
+  split:
+    strategy: random
+    seed: 42
+    rates:
+      train: 0.8
+      val: 0.1
+      test: 0.1
+    counts:
+      train: 32
+      val: 4
+      test: 4
