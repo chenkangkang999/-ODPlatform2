@@ -29,7 +29,8 @@ class ApiTests(SimpleTestCase):
             self.assertTrue(records[0]["measured_locally"])
 
     def test_documented_dataset_never_claims_local_measurements(self):
-        response = self.client.get("/api/dataset/")
+        with tempfile.TemporaryDirectory() as directory, patch.object(catalog, "ROOT", Path(directory)):
+            response = self.client.get("/api/dataset/")
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(len(data["classes"]), 33)

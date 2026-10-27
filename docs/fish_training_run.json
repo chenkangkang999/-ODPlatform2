@@ -1,0 +1,319 @@
+{
+  "schema_version": 1,
+  "id": "20261027-124755",
+  "created_at": "2026-10-27T12:47:55",
+  "model": "YOLO11n",
+  "epochs": 10,
+  "imgsz": 512,
+  "batch": 8,
+  "training_seed": 0,
+  "training_seconds": 410.985,
+  "provenance": "provided_training_archive",
+  "measured_locally": false,
+  "source_label": "同学训练记录",
+  "source_archive": "20261027-124755.zip",
+  "metric_scope": "training_end_validation",
+  "metrics": {
+    "map50": 0.9095257756720391,
+    "map50_95": 0.745421517651852,
+    "precision": 0.826985010396104,
+    "recall": 0.8872234678473744
+  },
+  "last_epoch_metrics": {
+    "map50": 0.90969,
+    "map50_95": 0.74542,
+    "precision": 0.82969,
+    "recall": 0.88624
+  },
+  "curves": [
+    {
+      "epoch": 1,
+      "time": 71.4971,
+      "map50": 0.32572,
+      "map50_95": 0.24278,
+      "precision": 0.29112,
+      "recall": 0.38675,
+      "box_loss": 1.02051,
+      "cls_loss": 5.21224,
+      "dfl_loss": 1.32325,
+      "val_box_loss": 0.89402,
+      "val_cls_loss": 2.62868,
+      "val_dfl_loss": 1.11231
+    },
+    {
+      "epoch": 2,
+      "time": 108.926,
+      "map50": 0.6002,
+      "map50_95": 0.46114,
+      "precision": 0.52871,
+      "recall": 0.64062,
+      "box_loss": 0.87412,
+      "cls_loss": 2.26159,
+      "dfl_loss": 1.16901,
+      "val_box_loss": 0.85818,
+      "val_cls_loss": 1.68561,
+      "val_dfl_loss": 1.08855
+    },
+    {
+      "epoch": 3,
+      "time": 146.211,
+      "map50": 0.70405,
+      "map50_95": 0.53522,
+      "precision": 0.63251,
+      "recall": 0.6375,
+      "box_loss": 0.85437,
+      "cls_loss": 1.63047,
+      "dfl_loss": 1.1471,
+      "val_box_loss": 0.86003,
+      "val_cls_loss": 1.39851,
+      "val_dfl_loss": 1.07414
+    },
+    {
+      "epoch": 4,
+      "time": 183.082,
+      "map50": 0.78176,
+      "map50_95": 0.59978,
+      "precision": 0.78526,
+      "recall": 0.69054,
+      "box_loss": 0.82305,
+      "cls_loss": 1.29347,
+      "dfl_loss": 1.1156,
+      "val_box_loss": 0.82219,
+      "val_cls_loss": 1.12925,
+      "val_dfl_loss": 1.0532
+    },
+    {
+      "epoch": 5,
+      "time": 220.313,
+      "map50": 0.82904,
+      "map50_95": 0.65034,
+      "precision": 0.73712,
+      "recall": 0.7963,
+      "box_loss": 0.78619,
+      "cls_loss": 1.09208,
+      "dfl_loss": 1.08683,
+      "val_box_loss": 0.80476,
+      "val_cls_loss": 0.94731,
+      "val_dfl_loss": 1.04782
+    },
+    {
+      "epoch": 6,
+      "time": 257.295,
+      "map50": 0.85383,
+      "map50_95": 0.67812,
+      "precision": 0.7799,
+      "recall": 0.81569,
+      "box_loss": 0.75183,
+      "cls_loss": 0.90851,
+      "dfl_loss": 1.07201,
+      "val_box_loss": 0.77385,
+      "val_cls_loss": 0.82177,
+      "val_dfl_loss": 1.02121
+    },
+    {
+      "epoch": 7,
+      "time": 294.368,
+      "map50": 0.86369,
+      "map50_95": 0.69871,
+      "precision": 0.81375,
+      "recall": 0.80042,
+      "box_loss": 0.72433,
+      "cls_loss": 0.787,
+      "dfl_loss": 1.05422,
+      "val_box_loss": 0.74501,
+      "val_cls_loss": 0.75646,
+      "val_dfl_loss": 0.99771
+    },
+    {
+      "epoch": 8,
+      "time": 333.316,
+      "map50": 0.88976,
+      "map50_95": 0.72106,
+      "precision": 0.81009,
+      "recall": 0.84469,
+      "box_loss": 0.69253,
+      "cls_loss": 0.69226,
+      "dfl_loss": 1.02974,
+      "val_box_loss": 0.73074,
+      "val_cls_loss": 0.7091,
+      "val_dfl_loss": 0.99096
+    },
+    {
+      "epoch": 9,
+      "time": 372.299,
+      "map50": 0.90288,
+      "map50_95": 0.73703,
+      "precision": 0.83399,
+      "recall": 0.85438,
+      "box_loss": 0.66913,
+      "cls_loss": 0.61808,
+      "dfl_loss": 1.02836,
+      "val_box_loss": 0.71013,
+      "val_cls_loss": 0.64336,
+      "val_dfl_loss": 0.9781
+    },
+    {
+      "epoch": 10,
+      "time": 410.985,
+      "map50": 0.90969,
+      "map50_95": 0.74542,
+      "precision": 0.82969,
+      "recall": 0.88624,
+      "box_loss": 0.65472,
+      "cls_loss": 0.58142,
+      "dfl_loss": 1.01138,
+      "val_box_loss": 0.70141,
+      "val_cls_loss": 0.61865,
+      "val_dfl_loss": 0.97251
+    }
+  ],
+  "data_identity": {
+    "contract_fingerprint": "e0272ec1daf7d634455dc5f453428f4791913cad6e0da5916e6415279b638727",
+    "data_fingerprint": "1dc1c08a237e59528e08fc2a292ab9f0792325e689243fb900c0093a7971b68e",
+    "reconciled": true,
+    "validated_pass": true
+  },
+  "split": {
+    "train": 3652,
+    "val": 458,
+    "test": 450
+  },
+  "split_strategy": "stratified_multilabel",
+  "split_seed": 42,
+  "per_class": [
+    {
+      "name": "Batashi",
+      "map50_95": 0.7487667063586566
+    },
+    {
+      "name": "Bele",
+      "map50_95": 0.8304064102564102
+    },
+    {
+      "name": "Chanda",
+      "map50_95": 0.8417931235431235
+    },
+    {
+      "name": "Chapila",
+      "map50_95": 0.8792833333333334
+    },
+    {
+      "name": "Chela",
+      "map50_95": 0.8304433695154533
+    },
+    {
+      "name": "Foli",
+      "map50_95": 0.7019610080951143
+    },
+    {
+      "name": "Ilish",
+      "map50_95": 0.5545071571298896
+    },
+    {
+      "name": "Kajuli",
+      "map50_95": 0.7878978785706661
+    },
+    {
+      "name": "Kayakanta",
+      "map50_95": 0.8211250664540136
+    },
+    {
+      "name": "Koi",
+      "map50_95": 0.7965214066776135
+    },
+    {
+      "name": "Magur",
+      "map50_95": 0.6990642007892647
+    },
+    {
+      "name": "Mola",
+      "map50_95": 0.8525000000000003
+    },
+    {
+      "name": "Mrigel",
+      "map50_95": 0.7813949344188149
+    },
+    {
+      "name": "Pabda",
+      "map50_95": 0.7054796644393424
+    },
+    {
+      "name": "Pangas",
+      "map50_95": 0.8203583333333331
+    },
+    {
+      "name": "Puti",
+      "map50_95": 0.8517063492063492
+    },
+    {
+      "name": "Rui",
+      "map50_95": 0.38741613040659517
+    },
+    {
+      "name": "Rupchada",
+      "map50_95": 0.8099012074731865
+    },
+    {
+      "name": "Shol",
+      "map50_95": 0.5995279304673781
+    },
+    {
+      "name": "Sorputi",
+      "map50_95": 0.7097108585858586
+    },
+    {
+      "name": "Taki",
+      "map50_95": 0.7704708704694
+    },
+    {
+      "name": "Tarabaim",
+      "map50_95": 0.7031141348806952
+    },
+    {
+      "name": "Telapia",
+      "map50_95": 0.8771890675990676
+    },
+    {
+      "name": "Tengra",
+      "map50_95": 0.4956639680838598
+    },
+    {
+      "name": "Veda",
+      "map50_95": 0.9071160714285714
+    },
+    {
+      "name": "Vetki",
+      "map50_95": 0.7829740078103091
+    },
+    {
+      "name": "ayer",
+      "map50_95": 0.7787931457946937
+    },
+    {
+      "name": "boyal",
+      "map50_95": 0.5620956479822858
+    },
+    {
+      "name": "chitol",
+      "map50_95": 0.6821166666666667
+    },
+    {
+      "name": "kalbaus",
+      "map50_95": 0.605219378660555
+    },
+    {
+      "name": "katol",
+      "map50_95": 0.8021444666005861
+    },
+    {
+      "name": "kholshe",
+      "map50_95": 0.9245886092235939
+    },
+    {
+      "name": "shing",
+      "map50_95": 0.6976589782564341
+    }
+  ],
+  "weight_sha256": "172f8f54747f7fe8bbf810a29ae514a58c4b4db2067fb8ed4b96e9307fcb76ab",
+  "note": "用户提供训练包中的真实10轮记录。metrics来自odp_audit.json训练结束后的验证汇总；last_epoch_metrics与curves来自results.csv。此记录不是本机新训练，也不是独立测试集成绩。"
+}

@@ -5,12 +5,14 @@ from urllib.parse import urlparse
 
 import requests
 
-from .catalog import DOCUMENTED_METRICS, class_names, llm_configured
+from .catalog import DOCUMENTED_METRICS, class_names, dataset_info, llm_configured, training_summary
 from .jobs import get_job
 
-DISCLOSURE = "仅发送问题、仓库说明和检测统计给配置的大模型服务；视频原文件始终留在本地。"
+DISCLOSURE = "仅发送问题、脱敏项目事实、训练概况和检测统计给配置的大模型服务；视频、数据集、训练包和权重原文件始终留在本地。"
 SYSTEM = """你是 FishScope 淡水鱼检测平台的中文助手。只依据提供的项目事实和检测证据回答。
-严格区分仓库文档基线和当前上传视频结果。没有检测证据时，不声称看到了视频或识别出了品种。
+严格区分仓库文档独立验证基线、用户提供的同学训练记录、本机新训练和当前上传视频结果。
+training_run是训练包中的历史训练结束验证汇总，不是本机新训练，也不是独立测试集成绩。
+没有检测证据时，不声称看到了视频或识别出了品种。
 视频的class_counts是多帧检出框次，不是独立鱼的数量，不可用它推断真实种群数量。
 类别是模型预测而非最终鉴定；不要据此断言有毒、可食用、疾病或生态安全。
 明确说明置信度不等于识别准确率；不要编造训练曲线、物种行为、视频情节或原因。
@@ -18,10 +20,25 @@ SYSTEM = """你是 FishScope 淡水鱼检测平台的中文助手。只依据提
 
 
 def evidence_for(job_id=None):
+    dataset = dataset_info()
+    local = dataset["local"]
+    validation = dataset["validation"]
+    supplied_training = training_summary()
+    # Keep archive names, local paths, model files and detailed audit records out of prompts.
+    training_keys = ("id", "created_at", "model", "epochs", "imgsz", "batch", "training_seconds",
+                     "provenance", "measured_locally", "source_label", "metric_scope", "metrics",
+                     "last_epoch_metrics", "split", "split_seed", "note")
     facts = {"project": "ODPlatform / FishScope，33类淡水鱼目标检测",
              "pipeline": "转换→质检→训练→评估→推理→结果解释",
              "classes": class_names(), "documented_baseline": DOCUMENTED_METRICS,
              "documented_dataset": {"images": 4560, "instances": 6034, "split": {"train": 3652, "val": 458, "test": 450}},
+             "local_dataset": {"available": local["available"], "counts": local["counts"],
+                               "instances": local["instances"],
+                               "validation": {key: validation[key] for key in
+                                              ("measured_locally", "overall", "checks_passed", "checks_total")
+                                              if key in validation}},
+             "training_run": {key: supplied_training[key] for key in training_keys if key in supplied_training}
+                             if supplied_training else None,
              "current_detection": None}
     if job_id:
         job = get_job(job_id)
@@ -52,7 +69,14 @@ def local_answer(message, facts):
                 "此回复由检测统计规则生成，未调用大模型。")
     lowered = message.lower()
     if any(word in lowered for word in ("map", "精确", "召回", "指标", "准确率", "模型效果")):
-        return ("本地规则解释：仓库记录的独立验证集基线为mAP50 90.73%、mAP50-95 74.42%、精确率82.68%、"
+        training = facts.get("training_run")
+        supplied = ""
+        if training:
+            metrics = training["metrics"]
+            supplied = (f"同学提供的{training['epochs']}轮训练记录，训练结束验证汇总为mAP50 {metrics['map50']:.2%}、"
+                        f"mAP50-95 {metrics['map50_95']:.2%}、精确率{metrics['precision']:.2%}、召回率{metrics['recall']:.2%}。"
+                        "这是提供训练包中的历史记录，不是本机新训练，也不是独立测试集成绩。")
+        return ("本地规则解释：" + supplied + "仓库记录的独立验证集基线为mAP50 90.73%、mAP50-95 74.42%、精确率82.68%、"
                 "召回率88.74%。这是作者的验证结果，本机尚未复测。mAP50看能否找到目标，mAP50-95对框的位置要求更严格；"
                 "精确率看报出的框有多少正确，召回率看真值目标有多少被找到。置信度是模型对单个预测框的评分，"
                 "mAP则需要有标注真值的数据集才能计算；单框置信度高，不等于整体准确率高。"
@@ -63,9 +87,24 @@ def local_answer(message, facts):
                 "用验证集选择参数，最终用独立测试集评估。调低置信度可能增加召回，也会增加误报，不能直接证明模型更准确。"
                 "这些是训练建议，当前没有新的实测结果。")
     if any(word in lowered for word in ("训练", "train", "数据", "划分")):
+        local = facts.get("local_dataset") or {}
+        integrated = "本机已接入鱼类数据。" if local.get("available") else "本机尚未接入完整数据，需先接入数据和血缘章。"
+        validation = local.get("validation") or {}
+        if validation.get("measured_locally"):
+            integrated += f"本机质检已通过{validation['checks_passed']}/{validation['checks_total']}项。"
+        training = facts.get("training_run")
+        record = ""
+        if training:
+            metrics = training["metrics"]
+            record = (f"已接入同学提供的真实训练记录：{training['model']}训练{training['epochs']}轮，"
+                      f"图像尺寸{training['imgsz']}、batch={training['batch']}，累计{training['training_seconds']:.3f}秒；"
+                      f"训练结束验证mAP50 {metrics['map50']:.2%}、mAP50-95 {metrics['map50_95']:.2%}。"
+                      "这是训练包中的历史记录，不是本机新训练，也不是独立测试集成绩。")
         return ("本地规则解释：项目使用4560张图片、6034个标注框、33个淡水鱼品种。冻结划分为训练3652、验证458、"
-                "测试450张，seed=42。先接入本地数据和血缘章，再运行平台质检；在训练页选择本地预训练权重、epoch、batch和图像尺寸后"
-                "明确点击开始。平台会复用odp-train完成身份核验、训练、审计与权重归档。仓库未提交数据和鱼类权重。")
+                "测试450张，划分seed=42。" + integrated + record +
+                "如需本机新训练，在训练页选择本地预训练权重、epoch、batch和图像尺寸后点击开始。"
+                "平台会复用odp-train完成身份核验、训练、审计与权重归档；数据和权重原文件不提交到GitHub。"
+                "此回复由本地规则生成，未调用大模型。")
     if any(word in lowered for word in ("视频", "识别", "推理", "上传", "解释")):
         return ("本地规则解释：在模型推理页选择本项目33类鱼的本地权重并上传视频，YOLO在本机逐帧检测，输出标注视频、"
                 "逐帧框、置信度与品种统计。完成后可在助手中选择任务解释。当前没有选中的已完成推理结果，因此不能判断视频里有什么鱼。"

@@ -1,0 +1,172 @@
+/* Alternating pale blue surfaces and a readable live local monitor. */
+.training-archive-chart { margin-top: 26px; background: #f2fafff7; }
+.training-archive-chart svg { display: block; width: 100%; max-height: 340px; overflow: visible; }
+.training-archive-chart svg text { font: 11px 'DM Sans', 'Microsoft YaHei', sans-serif; fill: #7894a6; }
+.curve-grid { stroke: #dcecf3; stroke-width: 1; }
+.curve-map50, .curve-map95 { fill: none; stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
+.curve-map50 { stroke: #2d99b8; }
+.curve-map95 { stroke: #87b6d6; }
+.curve-point { fill: #2d99b8; stroke: #f4fbff; stroke-width: 1.5; }
+.training-curve-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 20px; color: #66869b; font-size: 14px; margin: 10px 0 4px; }
+.training-curve-legend span { display: inline-flex; align-items: center; gap: 8px; }
+.training-curve-legend i { width: 20px; height: 3px; background: #2d99b8; border-radius: 3px; }
+.training-curve-legend span:nth-child(2) i { background: #87b6d6; }
+.training-curve-legend span:last-child { margin-left: auto; }
+.training-archive-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; border-top: 1px solid #d6e9f1; padding-top: 20px; }
+.training-archive-stats span { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #7996a8; }
+.training-archive-stats b { font-size: 19px; font-weight: 500; color: #46748d; overflow-wrap: anywhere; }
+.aquatic-shell .water-workspace .record-card .archive-detail { margin-top: 16px; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; border-top: 1px solid #cfe5ef; padding-top: 14px; }
+.aquatic-shell .water-workspace .record-card .archive-detail span { font-size: 13px; color: #688ca0; }
+@media (max-width: 650px) {
+  .training-archive-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .training-curve-legend { font-size: 12px; gap: 12px; }
+  .training-curve-legend span:last-child { margin-left: 0; width: 100%; }
+  .training-archive-stats b { font-size: 17px; }
+}
+.aquatic-shell .water-workspace .metric-card:nth-child(odd),
+.aquatic-shell .water-workspace .plain-metric { background: #eff8fff5; }
+.aquatic-shell .water-workspace .metric-card:nth-child(even) { background: #fbfdfff7; }
+.aquatic-shell .water-workspace .two-col > .card:nth-child(2),
+.aquatic-shell .water-workspace .run-panel,
+.aquatic-shell .water-workspace .evidence-card { background: #f1f9fff5; }
+.aquatic-shell .water-workspace .quick-panel,
+.aquatic-shell .water-workspace .record-card { background: linear-gradient(135deg, #eff9fff5, #eaf5fdf5); }
+.aquatic-shell .water-workspace .assistant-note { background: #edf7fdf2; }
+.aquatic-shell .water-workspace .output-panel,
+.aquatic-shell .water-workspace .chat-panel { background: #fcfefff8; }
+
+.aquatic-shell .water-workspace .class-grid > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 132px;
+  padding: 19px 15px;
+  gap: 10px;
+  border: 1px solid #c8e3f0;
+  background: #edf7fff2;
+}
+.aquatic-shell .water-workspace .class-grid > div:nth-child(even) { background: #f4fafff5; }
+.aquatic-shell .water-workspace .class-grid .fish-glyph {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 36px;
+}
+.aquatic-shell .water-workspace .class-grid .class-labels {
+  position: static;
+  inset: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  text-align: center;
+  font: inherit;
+}
+.aquatic-shell .water-workspace .class-labels b {
+  font-size: 18px;
+  line-height: 1.3;
+  color: #3f718b;
+  overflow-wrap: anywhere;
+}
+.aquatic-shell .water-workspace .class-labels small {
+  display: block;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #668ca1;
+  font-weight: 400;
+}
+.aquatic-shell .water-workspace .model-config-note {
+  align-items: flex-start;
+  background: #edf8fff5;
+  border-color: #b9ddeb;
+  color: #527c94;
+}
+.aquatic-shell .water-workspace .model-config-note > svg { flex-shrink: 0; margin-top: 2px; }
+.aquatic-shell .water-workspace .model-config-note > span { flex: 1; }
+.aquatic-shell .water-workspace .model-config-note b { display: block; margin-bottom: 4px; font-weight: 500; }
+.aquatic-shell .water-workspace .model-config-note small { display: block; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+
+.aquatic-shell .water-workspace .live-monitor {
+  margin-bottom: 26px;
+  background: #f9fdfff7;
+  border-color: #b8dfea;
+}
+.aquatic-shell .water-workspace .monitor-heading { margin-bottom: 15px; }
+.monitor-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 11px;
+  border: 1px solid #bfdfeb;
+  border-radius: 20px;
+  background: #eaf7fd;
+  font-size: 13px;
+  color: #3d879c;
+  white-space: nowrap;
+}
+.monitor-status > i { width: 7px; height: 7px; border-radius: 50%; background: #48a6ad; box-shadow: 0 0 0 3px #48a6ad12; }
+.monitor-status.offline { color: #94743f; background: #faf5e9; border-color: #e8dbbe; }
+.monitor-status.offline > i { background: #b59356; }
+.aquatic-shell .water-workspace .monitor-intro { font-size: 14px; color: #6d8c9e; margin: 0 0 22px; line-height: 1.7; }
+.resource-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 17px; }
+.resource-card { min-width: 0; border: 1px solid #c8e5f0; border-radius: 12px; padding: 22px; background: #edf8ff; }
+.resource-card.resource-memory { background: #f2f9ff; }
+.resource-card.resource-disk { background: #edf7fc; }
+.resource-label { display: flex; flex-direction: column; gap: 10px; }
+.resource-label > span { display: flex; align-items: center; gap: 9px; color: #4d7c95; font-size: 15px; }
+.resource-label > span svg { color: #71a7bd; flex-shrink: 0; }
+.resource-label > small { color: #6c8f9f; font-size: 12px; line-height: 1.6; min-height: 19px; }
+.resource-card > strong { display: block; font-size: 41px; font-weight: 500; color: #2e6683; margin: 16px 0 21px; line-height: 1.2; }
+.resource-card > strong small { margin-left: 7px; font-size: 17px; color: #739bad; font-weight: 400; }
+.resource-track { height: 7px; border-radius: 4px; background: #d7eaf4; overflow: hidden; }
+.resource-track > i { display: block; height: 100%; background: #61a8c2; border-radius: inherit; transition: width .35s ease; }
+.resource-memory .resource-track > i { background: #83b4d0; }
+.resource-disk .resource-track > i { background: #80b6be; }
+.process-grid { display: grid; grid-template-columns: 1fr 1.1fr 1fr 1.8fr; gap: 18px; margin-top: 22px; padding: 20px 0; border-top: 1px solid #d2e6ef; border-bottom: 1px solid #d2e6ef; }
+.process-grid > div { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.process-grid span { font-size: 12px; color: #7b98a6; }
+.process-grid b { font-size: 14px; font-weight: 500; color: #4d7c93; line-height: 1.6; overflow-wrap: anywhere; }
+.monitor-foot { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-top: 16px; flex-wrap: wrap; color: #7394a6; font-size: 12px; line-height: 1.6; }
+.monitor-warning { margin-top: 10px; }
+.monitor-logs { margin-top: 20px; border: 1px solid #d0e7f2; background: #f1f9fe; border-radius: 9px; padding: 15px 17px; }
+.monitor-logs > summary { cursor: pointer; font-size: 14px; color: #56849b; }
+.monitor-logs > summary small { font-size: 12px; color: #88a5b4; margin-left: 10px; }
+.monitor-log-empty { padding-top: 14px; }
+.monitor-log-item { padding-top: 16px; margin-top: 16px; border-top: 1px solid #d0e5ef; }
+.monitor-log-item > div { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+.monitor-log-item b { font-size: 14px; font-weight: 500; color: #4b7c96; }
+.monitor-log-item span { font-size: 12px; color: #678da2; }
+.monitor-log-item small { font-size: 12px; color: #819eac; margin-left: auto; }
+.monitor-log-item pre { margin-top: 12px; padding: 14px; border-radius: 7px; background: #e7f2f9; color: #4b748c; font: 12px/1.8 Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.monitor-log-item > p { margin-top: 12px; }
+
+@media (max-width: 950px) {
+  .resource-grid { grid-template-columns: 1fr; }
+  .resource-card { padding: 21px; }
+  .resource-label { flex-direction: row; align-items: center; justify-content: space-between; gap: 14px; }
+  .resource-label > small { text-align: right; }
+  .resource-card > strong { margin: 14px 0 17px; font-size: 36px; }
+  .process-grid { grid-template-columns: 1fr 1fr; gap: 20px; }
+}
+@media (max-width: 500px) {
+  .aquatic-shell .water-workspace .class-grid > div { min-height: 139px; padding: 17px 10px; }
+  .aquatic-shell .water-workspace .class-grid .fish-glyph { width: 41px; height: 33px; }
+  .aquatic-shell .water-workspace .class-labels b { font-size: 16px; }
+  .aquatic-shell .water-workspace .class-labels small { font-size: 14px; }
+  .monitor-heading { align-items: flex-start; }
+  .resource-card { padding: 18px; }
+  .resource-label { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .resource-label > small { text-align: left; }
+  .process-grid { gap: 19px 13px; }
+  .process-grid b { font-size: 13px; }
+  .monitor-log-item small { margin-left: 0; }
+  .monitor-status { font-size: 12px; padding: 7px 10px; }
+  .monitor-foot { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .resource-track > i { transition: none; }
+}

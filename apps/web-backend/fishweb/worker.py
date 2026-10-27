@@ -160,10 +160,24 @@ def infer(config, output):
 
 
 def train(config, output):
-    from fishweb.catalog import resolve_model
-    command = [sys.executable, "-m", "od_platform.cli.train_model", "--data", "fish",
+    import yaml
+    from fishweb.catalog import dataset_yaml_path, resolve_model
+
+    # The platform CLI parses --batch as float, while its configuration treats
+    # floats as GPU fractions. Preserve the complete runtime baseline and carry
+    # the Web's integer batch through a private YAML instead of that CLI option.
+    baseline = ROOT / "apps/platform/configs/runtime/train.yaml"
+    runtime = yaml.safe_load(baseline.read_text(encoding="utf-8"))
+    if not isinstance(runtime, dict):
+        raise ValueError("平台训练配置必须为 YAML 对象。")
+    runtime["batch"] = config["batch"]
+    output.mkdir(parents=True, exist_ok=True)
+    private_config = (output / "train.runtime.yaml").resolve()
+    private_config.write_text(yaml.safe_dump(runtime, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    command = [sys.executable, "-m", "od_platform.cli.train_model", "--config", str(private_config),
+               "--data", str(dataset_yaml_path()),
                "--model", str(resolve_model(config["model"])), "--epochs", str(config["epochs"]),
-               "--batch", str(config["batch"]), "--imgsz", str(config["imgsz"]),
+               "--imgsz", str(config["imgsz"]),
                "--experiment-name", "fish-web-" + output.name[:8]]
     if config["device"]:
         command += ["--device", config["device"]]
