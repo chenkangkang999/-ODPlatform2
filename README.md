@@ -10,10 +10,28 @@
 
 ## 当前业务场景与数据集状态
 
-本平台当前面向的业务场景是**矿井煤仓传送带异物检测**（用户确定的场景：目标类别 5~7 类，多于 5 类）。
+本平台当前面向的业务场景是**淡水鱼品种细分类检测**（fine-grained detection：既定位鱼体、又区分品种）。
 
-> ⚠️ **数据集尚未最终确定**。仓库里现有的 `data/raw/{demo,demococo,demoyolo,broken,synth}` 全部是
-> 链路演示/验证用数据，**不是**业务数据集，也**不代表**最终的类别清单。
+业务数据集已接入：**BengalDeltaFish**（孟加拉三角洲淡水鱼检测数据集，Roboflow 导出、CC BY 4.0、YOLO 格式）。
+
+| 项目 | 实测值 |
+|---|---|
+| 数据集名（`--dataset`） | `fish` → `data/raw/fish/`、`data/processed/fish/`、`apps/platform/configs/datasets/fish.yaml` |
+| 图片 / 标签 / 实例 | **4560 / 4560 / 6034**（一图一签，无缺签、无孤儿标签） |
+| **类别数** | **33 个淡水鱼品种** |
+| 类别（`names` 顺序即 `class_id`） | `Batashi, Bele, Chanda, Chapila, Chela, Foli, Ilish, Kajuli, Kayakanta, Koi, Magur, Mola, Mrigel, Pabda, Pangas, Puti, Rui, Rupchada, Shol, Sorputi, Taki, Tarabaim, Telapia, Tengra, Veda, Vetki, ayer, boyal, chitol, kalbaus, katol, kholshe, shing` |
+| 划分（`stratified_multilabel`，seed 42，一次性冻结） | train **3652** / val **458** / test **450** |
+| 契约指纹 | `e0272ec1daf7d634455dc5f453428f4791913cad6e0da5916e6415279b638727` |
+| `odp-validate` 结果 | **15/15 项 PASS，总评 PASS**（`data_fingerprint=1dc1c08a…`） |
+
+> 说明：原始 Roboflow 导出自带 `train/valid/test` 三份划分，但本平台**不沿用**它 ——
+> 划分在 `odp-transform` 这一步用固定种子一次性产出、落盘并写进划分契约（D0 决定 5：
+> 训练只读那份冻结的划分）。合并原始三份 split 的整理脚本见
+> [`scripts/prepare_fish_raw.py`](scripts/prepare_fish_raw.py)（源路径走命令行参数，不写死盘符）。
+
+> ⚠️ 仓库里另有 `data/raw/{demo,demococo,demoyolo,broken,synth}` —— 那是**链路演示/验证用数据**，
+> 不是业务数据集（其中 `demo` 的图片是 0 字节空文件，**不能用来训练**；`synth` 是合成噪声图，
+> 仅用于验证训练链路可跑，指标无意义）。
 
 平台与具体数据集解耦：**把任意数据集按下面的目录约定放进 `data/raw/<name>/` 即可**，
 类别名由 `odp-transform --classes` 或数据自带信息决定，不存在写死的类别表。
@@ -123,6 +141,35 @@ $PY = ".\.venv\Scripts\python.exe"
 ## 快速开始（8 步）
 
 > 所有命令都在**仓库根** `D:\ODPlatform2` 下执行。命令统一写 `& .\.venv\Scripts\odp-xxx.exe`。
+
+### 本次业务数据集（`fish`，33 类淡水鱼）的完整命令序列
+
+```powershell
+# ① 把外部 Roboflow 数据集整理成 raw 布局（源路径从命令行给，不写死盘符）
+& .\.venv\Scripts\python.exe scripts\prepare_fish_raw.py --src "<外部数据集根，含 data.yaml>" --name fish
+
+# ② 转换 + 划分 + 物化（yolo 格式必须显式给类名，顺序即 class_id）
+$names = "Batashi Bele Chanda Chapila Chela Foli Ilish Kajuli Kayakanta Koi Magur Mola Mrigel Pabda Pangas Puti Rui Rupchada Shol Sorputi Taki Tarabaim Telapia Tengra Veda Vetki ayer boyal chitol kalbaus katol kholshe shing".Split(" ")
+& .\.venv\Scripts\odp-transform.exe --dataset fish --format yolo --split-strategy stratified_multilabel --classes @names
+
+# ③ 质检（应得 15/15 PASS，并盖 D4 章）
+& .\.venv\Scripts\odp-validate.exe apps\platform\configs\datasets\fish.yaml
+
+# ④ 生成运行配置模板（train/val/infer/eval）
+& .\.venv\Scripts\odp-gen-config.exe train
+
+# ⑤ GPU 训练
+& .\.venv\Scripts\odp-train.exe --data fish --epochs 15 --imgsz 640 --batch 0.2 --model yolo11n
+
+# ⑥ 评估（mAP50 / mAP50-95 / IoU 匹配分析 / 置信度扫描）
+& .\.venv\Scripts\odp-eval.exe --weights models\trained\<run>-fish-yolo11n-best.pt --data apps\platform\configs\datasets\fish.yaml --device 0 --conf-sweep
+
+# ⑦ 推理（图片夹 / 视频 / 摄像头）
+& .\.venv\Scripts\odp-infer.exe --source data\processed\fish\images\test --model models\trained\<run>-fish-yolo11n-best.pt --device 0 --save --no-show
+```
+
+实测结果（本机 RTX 4060 Laptop 8GB）见下文「评估指标」一节；
+`data/raw/`、`data/processed/`、`models/*.pt`、`runs/` 都**不进 git**（`.gitignore`）。
 
 ### 0) 初始化目录 + 看环境
 
@@ -377,6 +424,43 @@ mAP50 / mAP75 / mAP50-95 确实"沿 IoU 轴看"，但它们回答的是**"能不
 2. 并列时取精度更高的；再并列取阈值更低的；
 3. 若**没有任何阈值达标**，不硬推荐 —— 返回 `status: "目标精度不可达"`，
    并给出 F1 最高的阈值作为参考，`reason` 里明确写"不构成「达标」结论"。
+
+### 5) 本次业务数据集（`fish`，33 类淡水鱼）的实测数值
+
+下面这组数字是**本仓库真跑出来的**（RTX 4060 Laptop 8GB / `yolo11n` / `imgsz=512` /
+`batch=8` / 10 epoch / `stratified_multilabel` 冻结划分：train 3652 · val 458 · test 450）。
+
+训练（`odp-train --data fish --model yolo11n --epochs 10`，耗时 0.114 h）：
+
+| 指标 | 数值 |
+|---|---|
+| **mAP50** | **0.9095** |
+| **mAP50-95** | **0.7454** |
+| P / R（官方口径） | 0.8270 / 0.8872 |
+| 推理速度 | 2.28 ms/图（总 4.07 ms/图含前后处理），10 epoch ≈ 7 分钟 |
+
+评估（`odp-eval --weights models/trained/train-<run>-fish-yolo11n-best.pt --data apps/platform/configs/datasets/fish.yaml --device 0 --imgsz 512 --batch 8 --conf-sweep`，val 458 张 / 661 真值框 / 33 类）：
+
+| 口径 | 数值 |
+|---|---|
+| **mAP50 / mAP50-95**（官方，`conf=0.001` 走完整 P-R 曲线） | **0.9073 / 0.7442** |
+| 官方 P / R（全类平均） | 0.8268 / 0.8874 |
+| 推荐置信度阈值 | `conf=0.4` → P=0.8349 · R=0.8884 · **F1=0.8608**（`target_precision=0.90` 不可达，如实标"目标精度不可达"，给 F1 最优点作参考） |
+| **IoU 匹配分析**（`conf=0.001`，门限 IoU≥0.5） | 预测 3664 / 真值 661 / **匹配 645 对**；**IoU 平均 0.8961 · 中位 0.9158 · 最小 0.5054 · 最大 0.9879** |
+| 匹配口径 P/R/F1（`conf=0.001`） | 0.1760 / 0.9758 / 0.2983 —— 低 P 是极低阈值吐框所致，**不代表框不准** |
+| **部署阈值口径**（加 `--conf 0.4` 重跑） | 预测 753 / **匹配 586 对**（TP=586 FP=167 FN=75）；**IoU 平均 0.9012 · 中位 0.9187**；匹配口径 **P=0.7782 R=0.8865 F1=0.8289** |
+
+每类 AP@0.5:0.95 的**最难/最易**（`report.json` 的 `per_class` 有全部 33 类）：
+最好 `kholshe 0.925` · `Veda 0.907` · `Chapila 0.879`；最难 `Rui 0.387` · `Tengra 0.496` · `Ilish 0.555`。
+冷启动推理演示：
+- 单图 `odp-infer --conf 0.4` → 检出 **1 条鱼，品种 `Mola`**（`runs/detect_infer/fish_demo/`）；
+- 整个 test split（450 张）`odp-infer --source data/processed/fish/images/test --conf 0.4 --save` →
+  **733 个检出，覆盖全部 33 个品种**，总耗时 **5.60 s**（推理 163.7 FPS、平均 12.04 ms/帧），
+  产物在 `runs/detect_infer/fish_test_batch/`（450 张标注图 + `odp_audit.json`）。
+
+> ⚠️ 这组数字的含义：10 epoch 的 `yolo11n` 只是把链路跑通、给出可复现的基线；
+> 要冲更高 mAP 应加 epoch、换 `yolo11s/m`、或提高 `imgsz`。**划分与数据指纹已冻结**
+> （`contract_fingerprint=e0272ec1…`、`data_fingerprint=1dc1c08a…`），所以换超参后指标仍可比。
 
 ### 产物
 

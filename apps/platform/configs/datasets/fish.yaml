@@ -1,0 +1,59 @@
+path: data/processed/fish
+train: images/train
+val: images/val
+test: images/test
+names:
+  0: Batashi
+  1: Bele
+  2: Chanda
+  3: Chapila
+  4: Chela
+  5: Foli
+  6: Ilish
+  7: Kajuli
+  8: Kayakanta
+  9: Koi
+  10: Magur
+  11: Mola
+  12: Mrigel
+  13: Pabda
+  14: Pangas
+  15: Puti
+  16: Rui
+  17: Rupchada
+  18: Shol
+  19: Sorputi
+  20: Taki
+  21: Tarabaim
+  22: Telapia
+  23: Tengra
+  24: Veda
+  25: Vetki
+  26: ayer
+  27: boyal
+  28: chitol
+  29: kalbaus
+  30: katol
+  31: kholshe
+  32: shing
+nc: 33
+odp_meta:
+  schema_version: 1
+  dataset_name: fish
+  source_format: yolo
+  task: detect
+  tool_version: odp-transform/0.4
+  created_at: '2026-10-27T12:23:44'
+  contract_fingerprint: e0272ec1daf7d634455dc5f453428f4791913cad6e0da5916e6415279b638727
+  manifest_path: runs/data_pipeline/20261027-122344/manifest.json
+  split:
+    strategy: stratified_multilabel
+    seed: 42
+    rates:
+      train: 0.8
+      val: 0.1
+      test: 0.1
+    counts:
+      train: 3652
+      val: 458
+      test: 450

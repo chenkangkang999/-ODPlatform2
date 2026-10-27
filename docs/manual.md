@@ -53,6 +53,32 @@ CPU型号与核心数 / 总内存与可用内存 / **CUDA可用 / GPU数量 / GP
 | `coco` | `images/` | `annotations/`（`*.json`） | 单 json，跳过 stem 级覆盖率检查 |
 | `yolo` | `images/` | **`labels/`**（`*.txt`） | **类别名必须 `--classes` 显式给** |
 
+目录必须是**扁平**的：一张图 `images/<stem>.<ext>` 配一份标签 `labels/<stem>.txt`
+（物化时按 `glob("<stem>.*")` 取图，不递归）。
+
+#### 1.3.1 外部 Roboflow 数据集的接入（本次业务数据集就是这么来的）
+
+Roboflow 导出的目录是三层的：
+
+```
+<dataset>/data.yaml            # train: ../train/images, nc, names, roboflow 元信息
+<dataset>/train/{images,labels}/
+<dataset>/valid/{images,labels}/
+<dataset>/test/{images,labels}/
+```
+
+它自带的 `train/valid/test` 三份划分**不沿用** —— 本平台的划分在 `odp-transform`
+这一步用固定种子一次性冻结并写进划分契约，训练只读那份冻结的划分。
+用仓库自带的整理脚本把三份 split 合并拍平（**源路径从命令行给，不写死盘符**）：
+
+```powershell
+& .\.venv\Scripts\python.exe scripts\prepare_fish_raw.py --src "<外部数据集根，含 data.yaml>" --name fish
+# --dry-run 先体检：逐 split 计数、类分布、重名、缺签、类号越界
+```
+
+脚本会打印体检结果（本数据集：4560 图 / 4560 签 / 6034 实例 / 33 类、无重名无缺签），
+然后落到 `data/raw/fish/{images,labels}/`，并直接提示下一步的 `odp-transform` 命令。
+
 ---
 
 ## 二、命令详解
