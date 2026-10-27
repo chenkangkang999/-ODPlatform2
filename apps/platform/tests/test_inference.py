@@ -3,6 +3,7 @@
 
 覆盖讲义自带的验证脚本:
   - §1.4 pipeline_config: yaml 解析 / CameraConfig 延迟构造 / 缺失文件降级
+  - §1.5 output 段配置   : 默认值=改造前行为 / 改配置真生效 / 类型写错逐字段容错
   - §2.3 overlay       : FPSCounter 双口径 / Metrics 5 维 snapshot + speed 平均
   - §3.4 三个接缝       : CancelToken / InferHooks(业务异常必吞) / OutputSink
   - §6.3 CLI           : cli_args 映射 (None 不进 dict) / 缺 source 退出码
@@ -19,11 +20,13 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import logging
 import sys
 import tempfile
 import threading
 import time
 import types
+from contextlib import contextmanager
 from pathlib import Path
 
 import numpy as np
@@ -197,6 +200,11 @@ from od_platform.inference import (  # noqa: E402
     load_pipeline_config,
 )
 from od_platform.inference.overlay import FPSCounter, Metrics  # noqa: E402
+from od_platform.inference.pipeline_config import (  # noqa: E402
+    OutputConfig,
+    coerce_output_config,
+)
+from od_platform.runtime_config.report import render_effective, render_overrides  # noqa: E402
 
 PIPE_YAML = _paths.APP_DIR / "configs" / "runtime" / "infer_pipeline.yaml"
 
@@ -470,3 +478,403 @@ def test_infer_yolo_never_raises_without_source():
     res = infer_yolo(cli_args={"model": "yolo11n.pt"}, rename_log=False)
     assert res.success is False and res.stats == {}
     assert json.dumps(res.stats) == "{}"
+
+
+# ============================================================================
+# §1.5 输出落盘配置 (infer_pipeline.yaml 的 output 段)
+# ----------------------------------------------------------------------------
+# 两条硬要求各有一组钉子:
+#   1) 配置缺失/字段缺失 → 默认值 = 改造前 LocalFileSink 写死的行为(文件名与字节一致)
+#   2) 配置改了就真生效 → 产物名 / 编码器 / 质量 / 帧率随之变化, 且能被 cv2 读回
+# ============================================================================
+def test_output_config_defaults_are_legacy_behavior():
+    """默认值必须逐字段等于改造前写死在 LocalFileSink 里的那些值."""
+    cfg = OutputConfig()
+    assert cfg.video_filename() == "output.mp4"          # 原: output.mp4
+    assert cfg.image_filename("fish_0") == "fish_0.jpg"  # 原: <stem>.jpg
+    assert cfg.video_fourcc == "mp4v"                    # 原: fourcc(*"mp4v")
+    assert cfg.video_fps is None and cfg.video_fps_fallback == 30.0   # 原: 源帧率 else 30.0
+    assert cfg.image_quality == 95                       # OpenCV 未传参时的默认质量
+    assert cfg.overwrite_existing is True                # 原: cv2.imwrite/VideoWriter 直接覆盖
+    assert cfg.keep_audit_json is True                   # 原: 必写审计快照
+    assert cfg.audit_filename == "odp_audit.json"
+    assert cfg.anonymous_frame_template.format(index=7) == "frame_000007"   # 原: frame_{:06d}
+
+
+def test_pipeline_config_output_section_absent_uses_legacy_defaults(tmp_path):
+    """output 段整段缺失 → 全默认值, 且来源表标 DEFAULT(不是静默空表)."""
+    p = tmp_path / "no_output.yaml"
+    p.write_text("visualization:\n  enabled: true\n", encoding="utf-8")
+    pc = load_pipeline_config(str(p))
+    assert pc.output == OutputConfig()
+    labels = pc.output_merger.source_labels()
+    assert labels["image_format"] == "DEFAULT" and labels["video_fourcc"] == "DEFAULT"
+    eff = "\n".join(render_effective(pc.output, pc.output_merger))
+    assert "(来源: DEFAULT)" in eff
+
+
+def test_pipeline_config_output_overrides_and_provenance(tmp_path):
+    """写进 yaml 的字段生效, 且能查到"值从哪来" + 覆盖链."""
+    p = tmp_path / "out.yaml"
+    p.write_text(
+        "output:\n"
+        "  filename_prefix: \"odp_\"\n"
+        "  image_format: \".PNG\"\n"          # 前导点 + 大写都要被规范化
+        "  image_quality: 60\n"
+        "  video_basename: \"clip\"\n"
+        "  video_format: \"avi\"\n"
+        "  video_fourcc: \"MJPG\"\n"
+        "  video_fps: \"auto\"\n"            # auto = 跟随源帧率(None)
+        "  video_fps_fallback: 15\n"
+        "  overwrite_existing: false\n"
+        "  keep_audit_json: false\n"
+        "  audit_filename: \"infer_audit.json\"\n",
+        encoding="utf-8",
+    )
+    pc = load_pipeline_config(str(p))
+    o = pc.output
+    assert (o.filename_prefix, o.image_format, o.image_quality) == ("odp_", "png", 60)
+    assert (o.video_basename, o.video_format, o.video_fourcc) == ("clip", "avi", "MJPG")
+    assert o.video_fps is None and o.video_fps_fallback == 15.0
+    assert o.overwrite_existing is False and o.keep_audit_json is False
+    assert o.video_filename() == "odp_clip.avi"
+    assert o.image_filename("fish") == "odp_fish.png"
+
+    labels = pc.output_merger.source_labels()
+    assert labels["image_format"] == "YAML" and labels["audit_filename"] == "YAML"
+    eff = "\n".join(render_effective(o, pc.output_merger))
+    assert "(来源: YAML)" in eff and "video_fourcc" in eff
+    chains = "\n".join(render_overrides(o, pc.output_merger))
+    assert "image_quality" in chains            # 95(DEFAULT) → 60(YAML)
+
+    audit = pc.to_audit()
+    assert audit["output"]["video_fourcc"] == "MJPG"
+    assert audit["output_sources"]["image_format"] == "YAML"
+
+
+def test_pipeline_config_output_bad_values_fall_back_with_warning(tmp_path):
+    """类型/取值写错 → 逐个 warning + 只回落后该字段, 合法字段不受连坐."""
+    p = tmp_path / "bad_output.yaml"
+    p.write_text(
+        "output:\n"
+        "  image_quality: \"高清\"\n"          # 不是数字
+        "  video_fourcc: \"mp4\"\n"            # 只有 3 个字符
+        "  video_fps: -5\n"                    # <= 0
+        "  image_format: \"gif\"\n"            # 不在允许清单
+        "  filename_prefix: \"a/b\"\n"         # 带路径分隔符
+        "  anonymous_frame_template: \"frame_{idx}\"\n"   # 缺 {index}
+        "  overwrite_existing: \"maybe\"\n"    # 不是布尔
+        "  unknown_knob: 1\n"                  # 未知字段
+        "  video_basename: \"clip\"\n",        # ★ 唯一合法: 必须仍然生效
+        encoding="utf-8",
+    )
+    with _capture_logs("od_platform.inference.pipeline_config") as logs:
+        pc = load_pipeline_config(str(p))
+    o = pc.output
+    assert (o.image_quality, o.video_fourcc, o.video_fps) == (95, "mp4v", None)
+    assert (o.image_format, o.filename_prefix) == ("jpg", "")
+    assert o.anonymous_frame_template == "frame_{index:06d}"
+    assert o.overwrite_existing is True
+    assert o.video_basename == "clip"          # 合法字段照常生效
+    assert pc.output_merger.source_labels()["video_basename"] == "YAML"
+    assert pc.output_merger.source_labels()["video_fourcc"] == "YAML(无效,已回落默认)"
+    text = "\n".join(logs)
+    assert "output.image_quality" in text and "output.video_fourcc" in text
+    assert "output.video_fps" in text and "未知字段 'unknown_knob'" in text
+
+
+def test_pipeline_config_output_section_not_dict(tmp_path):
+    """output 段不是字典 → warning + 全默认, 不抛."""
+    p = tmp_path / "weird.yaml"
+    p.write_text("output: 123\n", encoding="utf-8")
+    with _capture_logs("od_platform.inference.pipeline_config") as logs:
+        pc = load_pipeline_config(str(p))
+    assert pc.output == OutputConfig()
+    assert any("output 段必须是字典" in m for m in logs)
+
+
+def test_pipeline_config_missing_file_records_output_provenance(tmp_path):
+    """整个 yaml 缺失时, 输出配置仍要落到默认值且溯源表不空(审计要可查)."""
+    pc = load_pipeline_config(str(tmp_path / "definitely_missing.yaml"))
+    assert pc.output == OutputConfig()
+    assert pc.output_merger.source_labels()["video_fourcc"] == "DEFAULT"
+
+
+def test_coerce_output_config_accepts_none_config_and_dict():
+    """sink 构造口的兼容适配: 旧调用点传 None 仍合法, 也接受 dict/OutputConfig."""
+    assert coerce_output_config(None) == OutputConfig()
+    assert coerce_output_config({"image_format": "png"}).image_format == "png"
+    assert coerce_output_config({"image_format": "nope"}).image_format == "jpg"   # 容错回默认
+    assert coerce_output_config(42) == OutputConfig()
+    cfg = OutputConfig(image_format="png")
+    assert coerce_output_config(cfg) is cfg
+
+
+@contextmanager
+def _capture_logs(logger_name: str):
+    """直接挂在目标 logger 上收日志.
+
+    仓库的 `get_logger` 会关掉 `odp_platform` 的 propagate(且 CLI 测试可能把级别设成
+    ERROR), 所以 pytest 的 caplog(挂在 root) 收不到这些 warning; 这里显式接管。
+    """
+    records: list[str] = []
+
+    class _Collector(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            records.append(record.getMessage())
+
+    target = logging.getLogger(logger_name)
+    prev_level = target.level
+    handler = _Collector()
+    target.addHandler(handler)
+    target.setLevel(logging.WARNING)
+    try:
+        yield records
+    finally:
+        target.removeHandler(handler)
+        target.setLevel(prev_level)
+
+
+def _frame(filename, index=0, fps=None):
+    return types.SimpleNamespace(
+        info=types.SimpleNamespace(filename=filename, frame_index=index, fps=fps))
+
+
+def _noise(h=60, w=80, seed=7):
+    rng = np.random.default_rng(seed)
+    return rng.integers(0, 255, (h, w, 3), dtype=np.uint8)
+
+
+def test_local_file_sink_names_and_format_come_from_config(tmp_path):
+    """filename_prefix / image_format / 兜底模板 → 产物名随配置变, 且能读回."""
+    import cv2
+
+    cfg = coerce_output_config({
+        "filename_prefix": "odp_", "image_format": "png",
+        "anonymous_frame_template": "anon_{index:05d}",
+    })
+    sink = LocalFileSink(cfg)
+    sink.open(tmp_path, SourceType.IMAGE)
+    img = _noise()
+    sink.write(_frame("fish_0.png"), img)
+    sink.write(_frame(None, index=42), img)
+    sink.close()
+
+    assert sorted(p.name for p in tmp_path.iterdir()) == \
+        ["odp_anon_00042.png", "odp_fish_0.png"]      # 前缀对"兜底命名"同样生效
+    back = cv2.imread(str(tmp_path / "odp_fish_0.png"))
+    assert back is not None and list(back.shape) == [60, 80, 3]
+    assert np.array_equal(back, img)          # PNG 无损: 像素逐一相同
+
+
+def test_local_file_sink_video_codec_container_and_fps_from_config(tmp_path):
+    """video_fourcc / video_format / video_basename / video_fps → 编码器与帧率随配置变."""
+    import cv2
+
+    cfg = coerce_output_config({
+        "filename_prefix": "odp_", "video_basename": "clip", "video_format": "avi",
+        "video_fourcc": "MJPG", "video_fps": 12.0,
+    })
+    sink = LocalFileSink(cfg)
+    sink.open(tmp_path, SourceType.VIDEO)
+    img = _noise()
+    for i in range(8):
+        sink.write(_frame(None, index=i, fps=25.0), (img + i).astype(np.uint8))
+    sink.close()
+
+    out = tmp_path / "odp_clip.avi"
+    assert out.exists()
+    cap = cv2.VideoCapture(str(out))
+    try:
+        assert cap.isOpened()
+        n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        fps = float(cap.get(cv2.CAP_PROP_FPS))
+        fi = int(cap.get(cv2.CAP_PROP_FOURCC))
+        fourcc = "".join(chr((fi >> (8 * k)) & 0xFF) for k in range(4))
+        ok, frame = cap.read()
+    finally:
+        cap.release()
+    assert n == 8
+    assert abs(fps - 12.0) < 0.5              # 固定 12, 不是源帧率 25
+    assert fourcc == "MJPG"                   # 编码器真的换了
+    assert ok and list(frame.shape) == [60, 80, 3]
+
+
+def test_local_file_sink_default_fps_follows_source_then_fallback(tmp_path):
+    """video_fps=null/缺省 = 跟随源帧率; 源没有帧率时才用 video_fps_fallback."""
+    import cv2
+
+    def _fps_of(d: Path, name: str) -> float:
+        cap = cv2.VideoCapture(str(d / name))
+        try:
+            return float(cap.get(cv2.CAP_PROP_FPS))
+        finally:
+            cap.release()
+
+    img = _noise()
+
+    d1 = tmp_path / "follow_source"
+    d1.mkdir()
+    sink = LocalFileSink(coerce_output_config({"video_fps": None}))
+    sink.open(d1, SourceType.VIDEO)
+    for i in range(4):
+        sink.write(_frame(None, index=i, fps=25.0), img)
+    sink.close()
+    assert abs(_fps_of(d1, "output.mp4") - 25.0) < 0.5      # 跟随源
+
+    d2 = tmp_path / "fallback_30"
+    d2.mkdir()
+    sink = LocalFileSink()
+    sink.open(d2, SourceType.VIDEO)
+    for i in range(4):
+        sink.write(_frame(None, index=i, fps=None), img)
+    sink.close()
+    assert abs(_fps_of(d2, "output.mp4") - 30.0) < 0.5      # 老行为: 兜底 30
+
+    d3 = tmp_path / "fallback_15"
+    d3.mkdir()
+    sink = LocalFileSink(coerce_output_config({"video_fps_fallback": 15}))
+    sink.open(d3, SourceType.VIDEO)
+    for i in range(4):
+        sink.write(_frame(None, index=i, fps=None), img)
+    sink.close()
+    assert abs(_fps_of(d3, "output.mp4") - 15.0) < 0.5      # 兜底可配
+
+
+def test_local_file_sink_image_quality_changes_bytes(tmp_path):
+    """image_quality 真的改变 jpg 字节(体积/哈希), 且仍能正常读回."""
+    import cv2
+
+    img = _noise(seed=11)
+    sizes = {}
+    for q in (95, 40):
+        d = tmp_path / f"q{q}"
+        d.mkdir()
+        sink = LocalFileSink(coerce_output_config({"image_quality": q}))
+        sink.open(d, SourceType.IMAGE)
+        sink.write(_frame("fish.jpg"), img)
+        sink.close()
+        p = d / "fish.jpg"
+        back = cv2.imread(str(p))
+        assert back is not None and list(back.shape) == [60, 80, 3]
+        sizes[q] = p.stat().st_size
+    assert sizes[40] < sizes[95]                       # 质量低 → 体积小
+    assert (tmp_path / "q95" / "fish.jpg").read_bytes() != \
+        (tmp_path / "q40" / "fish.jpg").read_bytes()
+
+
+def test_local_file_sink_overwrite_existing_false_skips(tmp_path):
+    """overwrite_existing=false → 同名不覆盖(保留第一次的字节); 默认 true → 覆盖."""
+    import cv2
+
+    first = np.full((40, 40, 3), 10, np.uint8)
+    second = np.full((40, 40, 3), 200, np.uint8)
+
+    d = tmp_path / "keep"
+    d.mkdir()
+    sink = LocalFileSink(coerce_output_config({"overwrite_existing": False}))
+    sink.open(d, SourceType.IMAGE)
+    sink.write(_frame("same.png"), first)
+    h1 = (d / "same.jpg").read_bytes()
+    sink.write(_frame("same.png"), second)
+    sink.close()
+    assert (d / "same.jpg").read_bytes() == h1
+    assert cv2.imread(str(d / "same.jpg")).mean() < 50          # 还是 10 那张
+
+    d2 = tmp_path / "replace"
+    d2.mkdir()
+    sink = LocalFileSink()
+    sink.open(d2, SourceType.IMAGE)
+    sink.write(_frame("same.png"), first)
+    sink.write(_frame("same.png"), second)
+    sink.close()
+    assert cv2.imread(str(d2 / "same.jpg")).mean() > 150        # 第二次覆盖生效
+
+
+# ============================================================================
+# §4.3 service 透传: output 段 → sink / 审计快照
+# ----------------------------------------------------------------------------
+# 用替身换掉 YOLO 与流水线, 只验证"配置有没有真的透传下去"(不跑真推理, 秒级).
+# ============================================================================
+def _patch_service_for_lightweight_run(monkeypatch, tmp_path) -> dict:
+    from od_platform.inference import pipeline as pipeline_mod
+    from od_platform.inference import service as svc
+
+    captured: dict = {}
+
+    class _FakeYOLO:
+        def __init__(self, path):
+            self.names = {0: "fish"}
+
+    class _RecorderPipeline:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+        def run(self, stats):
+            return False
+
+    monkeypatch.setattr(svc, "YOLO", _FakeYOLO)
+    monkeypatch.setattr(svc, "resolve_model_path", lambda *a, **k: tmp_path / "fake.pt")
+    monkeypatch.setattr(svc, "RUNS_DIR", tmp_path / "runs")
+    monkeypatch.setattr(pipeline_mod, "ThreadedPipeline", _RecorderPipeline)
+    return captured
+
+
+def test_service_passes_output_config_to_local_file_sink(monkeypatch, tmp_path):
+    captured = _patch_service_for_lightweight_run(monkeypatch, tmp_path)
+    pipe_yaml = tmp_path / "pipe.yaml"
+    pipe_yaml.write_text(
+        "output:\n  filename_prefix: \"odp_\"\n  video_fourcc: \"MJPG\"\n"
+        "  video_format: \"avi\"\n",
+        encoding="utf-8",
+    )
+    res = InferService().predict(
+        pipeline_yaml=str(pipe_yaml),
+        cli_args={"source": str(tmp_path / "x.jpg"), "model": "yolo11n.pt", "save": True},
+        rename_log=False,
+    )
+    assert res.success is True
+    sink = captured["output_sink"]
+    assert isinstance(sink, LocalFileSink)
+    assert sink.cfg.filename_prefix == "odp_" and sink.cfg.video_fourcc == "MJPG"
+    assert sink.cfg.video_filename() == "odp_output.avi"
+
+
+def test_service_audit_json_is_configurable(monkeypatch, tmp_path):
+    """keep_audit_json=false 不写审计快照; audit_filename 决定文件名."""
+    _patch_service_for_lightweight_run(monkeypatch, tmp_path)
+
+    off = tmp_path / "off.yaml"
+    off.write_text("output:\n  keep_audit_json: false\n", encoding="utf-8")
+    res = InferService().predict(
+        pipeline_yaml=str(off),
+        cli_args={"source": str(tmp_path / "x.jpg"), "model": "yolo11n.pt", "save": True},
+        rename_log=False,
+    )
+    assert res.success is True and res.audit_path is None
+    assert list(res.output_dir.glob("*.json")) == []
+
+    custom = tmp_path / "custom.yaml"
+    custom.write_text("output:\n  audit_filename: \"infer_audit.json\"\n", encoding="utf-8")
+    res2 = InferService().predict(
+        pipeline_yaml=str(custom),
+        cli_args={"source": str(tmp_path / "x.jpg"), "model": "yolo11n.pt", "save": True},
+        rename_log=False,
+    )
+    assert res2.audit_path is not None and res2.audit_path.name == "infer_audit.json"
+    payload = json.loads(res2.audit_path.read_text(encoding="utf-8"))
+    assert payload["pipeline"]["output"]["audit_filename"] == "infer_audit.json"
+    assert payload["pipeline"]["output_sources"]["audit_filename"] == "YAML"
+    assert payload["result_summary"]["sink"] == "LocalFileSink"
+
+
+def test_service_keeps_caller_provided_sink_untouched(monkeypatch, tmp_path):
+    captured = _patch_service_for_lightweight_run(monkeypatch, tmp_path)
+    mine = NullSink()
+    res = InferService().predict(
+        cli_args={"source": str(tmp_path / "x.jpg"), "model": "yolo11n.pt", "save": True},
+        output_sink=mine,
+        rename_log=False,
+    )
+    assert res.success is True
+    assert captured["output_sink"] is mine

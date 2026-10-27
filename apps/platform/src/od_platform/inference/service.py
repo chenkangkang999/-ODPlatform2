@@ -2,10 +2,14 @@
 # -*- coding:utf-8 -*-
 # @FileName  : service.py
 # @Project   : ODPlatform
-# @Function  : InferService — 编排 D5 配置 + 帧源捕获 + ultralytics 推理 + 美化绘制
+# @Function  : InferService — 编排 D5 配置 + 帧源捕获 + ultralytics 推理 + 美化绘制 + 输出落盘
 """推理服务编排器.
 
 ★ 核心纪律 (跟 D6 TrainService 完全同构): 不重新发明 D5 / 帧源 / 美化已有的轮子.
+
+★ 一切皆配置: 落盘参数(文件名/编码器/质量/帧率/覆盖策略/审计快照)不写死在这里,
+  从 infer_pipeline.yaml 的 output 段读(经 PipelineConfig.output), 透传给 LocalFileSink;
+  并把生效值与来源用 common/config_log 的两张表打进日志 + 写进审计快照。
 
 ★ 接缝 (向后 100% 兼容):
   - predict() 3 个新参数: output_sink / hooks / cancel_token, 全部 keyword-only Optional[None]
@@ -195,7 +199,7 @@ class InferService:
 
         Args:
             yaml_path:     D5 infer.yaml 路径. None 走默认.
-            pipeline_yaml: 帧源+美化 infer_pipeline.yaml 路径. None 走默认.
+            pipeline_yaml: 帧源+美化+输出 infer_pipeline.yaml 路径. None 走默认.
             cli_args:      CLI 覆盖字段 (source/conf/show/save/...), 交给 D5 merger.
             beautify:      是否美化. False → 退回 YOLO 原生 plot().
             rename_log:    是否把日志名改成跟 output_dir 对齐.
@@ -243,6 +247,14 @@ class InferService:
             log_device_info()
             log_effective_config(config, merger, logger=logger)
             log_override_chains(config, merger, logger=logger)
+
+            # ★ 输出落盘配置的"生效值 + 来源"(infer_pipeline.yaml 的 output 段).
+            #   OutputConfig 是 pydantic 模型 + OutputConfigMerger 提供溯源链,
+            #   所以能直接用跟 D5 一样的两张表: 谁给的、有没有真被改写。
+            logger.info("-" * 60)
+            logger.info("输出落盘配置 (infer_pipeline.yaml 的 output 段)".center(60))
+            log_effective_config(pipe.output, pipe.output_merger, logger=logger)
+            log_override_chains(pipe.output, pipe.output_merger, logger=logger)
 
             # ================================================================
             # 阶段 3: 源 + 模型解析
@@ -300,12 +312,24 @@ class InferService:
 
             # ★ 决定 sink: 调用方没传 → 按 want_save 自动选 LocalFileSink / NullSink
             #   调用方传了 → 用调用方的 (此时 want_save 仅影响 pipeline 的派发策略)
+            #   ★ 输出段配置透传给 LocalFileSink: 文件名/编码器/质量/帧率全从 pipe.output 来
             if output_sink is None:
-                output_sink = LocalFileSink() if want_save else NullSink()
+                if want_save:
+                    output_sink = LocalFileSink(pipe.output)
+                    logger.info(
+                        f"输出文件名规则: 视频={pipe.output.video_filename()}, "
+                        f"图片={pipe.output.image_filename('<原图名>')}"
+                    )
+                else:
+                    output_sink = NullSink()
                 _sink_owned = True
             else:
                 _sink_owned = False
                 logger.info(f"使用调用方提供的 sink: {output_sink.__class__.__name__}")
+                logger.info(
+                    "调用方 sink 自行决定落盘参数; output 段的生效值见上面的表, "
+                    "业务 sink 需要时可读 PipelineConfig.output."
+                )
 
             # ================================================================
             # 阶段 5: 执行推理
@@ -367,33 +391,42 @@ class InferService:
                 rename_log_to_save_dir(output_dir, model_stem)
 
             # ================================================================
-            # 阶段 8: 审计快照
+            # 阶段 8: 审计快照 (文件名与"写不写"都来自 output 段)
             # ================================================================
-            audit_path: Path | None = output_dir / "odp_audit.json"
+            audit_path: Path | None = None
             log_path = _find_project_log_path()
-            try:
-                audit_payload = {
-                    "mode": "infer",
-                    "config": config.to_audit_snapshot(),
-                    "merger": merger.to_audit_log(),
-                    "pipeline": pipe.to_audit(),
-                    "stats": stats.to_dict(),
-                    "result_summary": {
-                        "output_dir": str(output_dir),
-                        "saved": want_save,
-                        "beautified": do_beautify,
-                        "infer_time_sec": (datetime.now() - start).total_seconds(),
-                        "log_path": str(log_path) if log_path else None,
-                    },
-                }
-                audit_path.write_text(
-                    json.dumps(audit_payload, ensure_ascii=False, indent=2),
-                    encoding="utf-8",
+            if not pipe.output.keep_audit_json:
+                # ★ 不静默降级: 不写也要说清楚"是按哪条配置不写的"
+                logger.info(
+                    "按配置 output.keep_audit_json=false 跳过审计快照 "
+                    f"(本应写: {pipe.output.audit_filename})"
                 )
-                logger.info(f"审计快照:   {audit_path}")
-            except OSError as e:
-                logger.warning(f"写审计快照失败 (不影响推理结果): {e}")
-                audit_path = None
+            else:
+                audit_path = output_dir / pipe.output.audit_filename
+                try:
+                    audit_payload = {
+                        "mode": "infer",
+                        "config": config.to_audit_snapshot(),
+                        "merger": merger.to_audit_log(),
+                        "pipeline": pipe.to_audit(),
+                        "stats": stats.to_dict(),
+                        "result_summary": {
+                            "output_dir": str(output_dir),
+                            "saved": want_save,
+                            "sink": output_sink.__class__.__name__,
+                            "beautified": do_beautify,
+                            "infer_time_sec": (datetime.now() - start).total_seconds(),
+                            "log_path": str(log_path) if log_path else None,
+                        },
+                    }
+                    audit_path.write_text(
+                        json.dumps(audit_payload, ensure_ascii=False, indent=2),
+                        encoding="utf-8",
+                    )
+                    logger.info(f"审计快照:   {audit_path}")
+                except OSError as e:
+                    logger.warning(f"写审计快照失败 (不影响推理结果): {e}")
+                    audit_path = None
 
             # ---- 收尾 ----
             infer_time = (datetime.now() - start).total_seconds()

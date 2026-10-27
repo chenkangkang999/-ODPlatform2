@@ -1,5 +1,6 @@
-# infer_pipeline.yaml — ODPlatform D8 推理子系统的"帧源 + 美化"配置
+# infer_pipeline.yaml — ODPlatform D8 推理子系统的"帧源 + 美化 + 输出落盘"配置
 # 这份配置管 D5 的 infer.yaml 管不到的那一半. 互不重叠, 各管各的.
+# 三段(每段都可整段删掉): frame_source / visualization / output —— 删掉 = 用代码默认值.
 
 # ============================================================================
 # 帧源 (frame_source) — 主要给摄像头/RTSP 用; 视频文件 / 图片夹 走默认即可
@@ -53,3 +54,43 @@ visualization:
     # text_scale: 0.6             # 标签字号
     # text_color: [255, 255, 255] # 标签字色
     # text_bg_alpha: 0.6          # 标签背景不透明度 (0-1)
+
+# ============================================================================
+# 输出落盘 (output) — 原先写死在 inference/sinks.py 的 LocalFileSink 里的那些值
+# 全部字段都可省: 不写 = 用下面的默认值 = 改造前的实际行为(文件名与字节逐一相同).
+# 只对内置的 LocalFileSink 生效; --no-save 走 NullSink 时整段无意义.
+# ============================================================================
+output:
+  # ---- 文件名 ----
+  filename_prefix: ""             # 产物文件名前缀; 空串=不加(默认). 例: "odp_" → odp_output.mp4
+  video_basename: "output"        # 视频文件名主干(不含扩展名). 默认 output → output.mp4
+  video_format: "mp4"             # 视频容器: mp4 / avi / mov / mkv. 须与 video_fourcc 匹配
+                                  # 例: video_format: "avi" (配 MJPG/XVID 这类 AVI 常用编码器)
+  image_format: "jpg"             # 图片扩展名: jpg / jpeg / png / bmp / webp / tif / tiff
+                                  # 例: image_format: "png" (无损, 体积大; 此时 image_quality 被忽略)
+  image_quality: 95               # JPEG 质量 1-100, 只对 jpg/jpeg 生效; 95 是 OpenCV 默认值
+                                  # 例: image_quality: 60 → 体积明显变小(有可见压缩痕迹)
+  anonymous_frame_template: "frame_{index:06d}"
+                                  # 帧源没给原始文件名时的兜底命名; {index} = 帧序号(0 起)
+                                  # 例: "anon_{index:05d}" → anon_00042.jpg
+
+  # ---- 视频编码 ----
+  video_fourcc: "mp4v"            # 编码器四字符码: mp4v / MJPG / XVID / avc1 ... (必须 4 字符)
+                                  # 默认 mp4v: OpenCV 自带, 不依赖外部编码器; 代价是压缩率低
+  video_fps: null                 # 写入帧率. null / auto / source = 跟随源帧率(默认)
+                                  # 例: video_fps: 25 → 固定 25 fps (源帧率被忽略)
+  video_fps_fallback: 30.0        # 源没有帧率信息(或为 0)时的兜底帧率. 默认 30.0
+
+  # ---- 落盘策略 ----
+  overwrite_existing: true        # true=同名直接覆盖(默认, 对齐改造前行为)
+                                  # false=同名已存在就跳过(不覆盖; 日志里会说明跳过了哪个文件)
+  keep_audit_json: true           # true=写审计快照(默认); false=不写, 日志里说明是按配置跳过的
+  audit_filename: "odp_audit.json"  # 审计快照文件名, 写在本次输出目录里
+                                  # 例: audit_filename: "infer_audit.json"
+
+  # 完整示例(改编码器为 Motion-JPEG, 产物名加前缀, 不覆盖旧产物):
+  # filename_prefix: "line01_"
+  # video_format: "avi"
+  # video_fourcc: "MJPG"
+  # image_quality: 80
+  # overwrite_existing: false

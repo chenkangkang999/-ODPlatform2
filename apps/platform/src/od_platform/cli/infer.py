@@ -34,7 +34,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--yaml", type=str, default=None,
                    help="D5 infer.yaml 路径. 不传走默认.")
     p.add_argument("--pipeline-yaml", type=str, default=None,
-                   help="帧源+美化 yaml 路径. 不传走默认 configs/runtime/infer_pipeline.yaml.")
+                   help="帧源+美化+输出 yaml 路径. 不传走默认 configs/runtime/infer_pipeline.yaml.")
     p.add_argument("--name", type=str, default=None, dest="experiment_name",
                    help="输出子目录名 (重复自增: predict / predict2 / ...).")
 
@@ -93,6 +93,8 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     cli_args = _ns_to_cli_args(ns)
+    # ★ --pipeline-yaml 透传给 service: 帧源 / 美化 / 输出落盘(output 段)都归它管,
+    #   service 会把 output 段的生效值与来源打进日志、并透传给 LocalFileSink。
     result = infer_yolo(
         yaml_path=ns.yaml,
         pipeline_yaml=ns.pipeline_yaml,

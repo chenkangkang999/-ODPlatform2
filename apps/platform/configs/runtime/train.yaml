@@ -204,7 +204,7 @@ time: null
 #   - 多少轮无提升后停止训练
 #   - 0 表示禁用 Early Stopping
 #   - 建议设为 epochs 的 30-50%
-patience: 100
+patience: 50
 
 # 是否从检查点恢复训练
 # 示例: False, True
