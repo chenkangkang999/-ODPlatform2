@@ -6,8 +6,9 @@
 # @Function  : runtime_config 子系统基础模型——BaseConfig
 """运行配置子系统基础模块.
 
-只装 BaseConfig: 所有模式(训练 / 验证 / 推理)共享的字段.
-专属字段去 train.py / val.py.
+只装两个基类:
+    - SettingsBase: 无业务字段的"能力基类" (extra=forbid + 元数据反射 + 审计)
+    - BaseConfig:   继承 SettingsBase, 加 17 个训练/验证/推理共享字段
 
 ★ 注意: 这里【不】设任何项目路径字段——
   paths.py 才是项目路径的【唯一真相来源】(D2 立的 SSoT 纪律).
@@ -17,16 +18,153 @@ from __future__ import annotations
 
 import warnings
 from datetime import datetime
-from typing import Any, ClassVar, Dict, List, Optional, Union
+from typing import Any, ClassVar, Dict, List, Optional, TypeVar, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 # ============================================================
-# BaseConfig: 所有模式共享的基础配置
+# SettingsBase: 只有"能力", 没有任何业务字段
 # ============================================================
 
-class BaseConfig(BaseModel):
+T = TypeVar("T", bound="SettingsBase")
+
+
+class SettingsBase(BaseModel):
+    """所有 runtime 配置类的公共基类: 只带 extra="forbid" + 元数据反射/审计工具.
+
+    ★ 为什么把它跟 BaseConfig 拆开(而不是让 D3/D4 的配置继承 BaseConfig):
+        ConfigGenerator 的全部元数据都来自这里的方法(get_field_groups /
+        get_field_metadata), 所以"能被 odp-gen-config 生成模板"这件事只依赖
+        【能力】, 不依赖【字段】。而 D3 数据流水线 / D4 质检 / runs 保留策略
+        一个 model/batch/imgsz 字段都不该有 —— 继承了 BaseConfig 就会把 17 个
+        训练字段塞进它们的 yaml 模板里(违反"别多"), 还会让 extra="forbid"
+        的拼写防线形同虚设(用户能往 validate.yaml 里写 batch: 16 而不报错)。
+
+        于是拆成两层:
+            SettingsBase —— 能力 (本类, 0 个字段)
+            BaseConfig   —— 能力 + D5/D6 共享字段 (17 个字段)
+        D3/D4/保留策略的配置直接继承本类, 模板里只出现自己真正用得到的字段。
+
+        "能力"与"字段"分离后, 生成器 / 合并器 / 溯源报告 / mask 逻辑一行都不用改
+        —— 它们只认 BaseModel + 这几个方法。
+    """
+
+    # extra="forbid": 拒绝 YAML / CLI 里拼错的字段名(详见 2.4 例 4)
+    model_config = ConfigDict(extra="forbid")
+
+    # 敏感字段 mask 时的替代字符串. 子类可重新赋值定制.
+    SENSITIVE_MASK: ClassVar[str] = "***"
+
+    # ============================================================
+    # 元数据反射 (供 generator / 文档 / 校验用)
+    # ============================================================
+
+    def get_field_groups(self) -> Dict[str, List[str]]:
+        """获取字段分组信息. {group_name: [field_names]}"""
+        groups: Dict[str, List[str]] = {}
+        for field_name, field_info in self.__class__.model_fields.items():
+            extra = field_info.json_schema_extra or {}
+            group = extra.get("group", "其他") if isinstance(extra, dict) else "其他"
+            groups.setdefault(group, []).append(field_name)
+        return groups
+
+    def get_field_metadata(self, field_name: str) -> Dict[str, Any]:
+        """获取字段的完整元数据(供 generator 写注释用)"""
+        if field_name not in self.__class__.model_fields:
+            raise ValueError(f"字段 '{field_name}' 不存在")
+
+        field_info = self.__class__.model_fields[field_name]
+        metadata: Dict[str, Any] = {
+            "description":  field_info.description,
+            "default":      field_info.default,
+            "examples":     [],
+            "tips":         [],
+            "yaml_comment": field_info.description,
+            "group":        "其他",
+            "sensitive":    False,
+        }
+        if isinstance(field_info.json_schema_extra, dict):
+            metadata.update(field_info.json_schema_extra)
+        return metadata
+
+    # ============================================================
+    # 实验复现接口 (to_audit_snapshot / from_audit_snapshot)
+    # ============================================================
+
+    def to_audit_snapshot(self) -> Dict[str, Any]:
+        """返回可序列化的完整快照, 用于实验复现.
+
+        Returns:
+            {
+                "config_class":  类名 (如 "YOLOTrainConfig"),
+                "config_module": 模块路径,
+                "frozen_at":     ISO 时间戳,
+                "values":        所有字段值,
+            }
+        """
+        return {
+            "config_class":  self.__class__.__name__,
+            "config_module": self.__class__.__module__,
+            "frozen_at":     datetime.now().isoformat(timespec="seconds"),
+            "values":        self.model_dump(),
+        }
+
+    @classmethod
+    def from_audit_snapshot(cls: type[T], snapshot: Dict[str, Any]) -> T:
+        """从快照恢复配置实例 (走完整 Pydantic 验证).
+
+        Raises:
+            ValueError:        快照类名与 cls 不匹配
+            ValidationError:   快照值非法 (字段定义可能已演进)
+        """
+        expected = cls.__name__
+        got = snapshot.get("config_class")
+        if got != expected:
+            raise ValueError(
+                f"快照来自配置类 {got!r}, 不能恢复到 {expected!r}. "
+                f"请用 {got}.from_audit_snapshot(snapshot)."
+            )
+        return cls(**snapshot.get("values", {}))
+
+    # ============================================================
+    # 敏感字段 mask
+    # ============================================================
+
+    def mask_sensitive_dump(self) -> Dict[str, Any]:
+        """model_dump() 但 sensitive 字段值替换成 SENSITIVE_MASK.
+
+        进日志 / 报告前调用, 避免敏感数据外泄.
+        进数据库存原值时用 model_dump() (不 mask).
+        """
+        dump = self.model_dump()
+        for field_name, field_info in self.__class__.model_fields.items():
+            extra = field_info.json_schema_extra or {}
+            if not isinstance(extra, dict):
+                continue
+            if not extra.get("sensitive"):
+                continue
+            if dump.get(field_name) is None:
+                continue                              # None 不 mask, 避免误导
+            dump[field_name] = self.SENSITIVE_MASK
+        return dump
+
+    @classmethod
+    def sensitive_field_names(cls) -> set[str]:
+        """返回标了 sensitive=True 的字段名集合 (供 merger 自动 mask 用)."""
+        result: set[str] = set()
+        for name, field_info in cls.model_fields.items():
+            extra = field_info.json_schema_extra or {}
+            if isinstance(extra, dict) and extra.get("sensitive"):
+                result.add(name)
+        return result
+
+
+# ============================================================
+# BaseConfig: 所有模式共享的基础配置 (能力来自 SettingsBase)
+# ============================================================
+
+class BaseConfig(SettingsBase):
     """所有模式(训练 / 验证 / 推理)共享的基础配置.
 
     字段分组:
@@ -35,6 +173,9 @@ class BaseConfig(BaseModel):
         - 设备配置: device, amp
         - 输出配置: project, name, exist_ok, save
         - 基础设置: verbose, seed, deterministic
+
+    ★ 元数据反射 / 审计快照 / 敏感 mask 六件套在 SettingsBase (父类) 里,
+      本类只负责"字段 + 字段相关的校验器".
     """
 
     # extra="forbid": 拒绝 YAML / CLI 里拼错的字段名(详见 2.4 例 4)
@@ -42,10 +183,14 @@ class BaseConfig(BaseModel):
 
     # 框架级字段: 只在 D5 框架内部使用, to_ultralytics_kwargs() 会把它们剔除,
     # 不传给 ultralytics. 子类(如 YOLOValConfig)可在此基础上并入更多字段.
+    # (SENSITIVE_MASK 不在这里重复声明 —— 它在 SettingsBase 里只有一处.)
     FRAMEWORK_ONLY_FIELDS: ClassVar[set[str]] = {"verbose"}
 
-    # 敏感字段 mask 时的替代字符串. 子类可重新赋值定制.
-    SENSITIVE_MASK: ClassVar[str] = "***"
+    # train/val/infer 的配置【必须】存在: odp-train 默认要加载 train.yaml,
+    # 文件不在就 fail-fast(见 YAMLLoader 的修复指引)。
+    # ★ 生成器写 FAQ 时读它(getattr 默认 False = 必选);
+    #   D3/D4/保留策略那三个配置类是可选型, 各自声明 True(见 transform.py 等)。
+    CONFIG_FILE_OPTIONAL: ClassVar[bool] = False
 
     model: Optional[str] = Field(
         default=None,
@@ -398,101 +543,8 @@ class BaseConfig(BaseModel):
             d.pop(field_name, None)
         return d
 
-    def get_field_groups(self) -> Dict[str, List[str]]:
-        """获取字段分组信息. {group_name: [field_names]}"""
-        groups: Dict[str, List[str]] = {}
-        for field_name, field_info in self.__class__.model_fields.items():
-            extra = field_info.json_schema_extra or {}
-            group = extra.get("group", "其他") if isinstance(extra, dict) else "其他"
-            groups.setdefault(group, []).append(field_name)
-        return groups
-
-    def get_field_metadata(self, field_name: str) -> Dict[str, Any]:
-        """获取字段的完整元数据(供 generator 写注释用)"""
-        if field_name not in self.__class__.model_fields:
-            raise ValueError(f"字段 '{field_name}' 不存在")
-
-        field_info = self.__class__.model_fields[field_name]
-        metadata: Dict[str, Any] = {
-            "description":  field_info.description,
-            "default":      field_info.default,
-            "examples":     [],
-            "tips":         [],
-            "yaml_comment": field_info.description,
-            "group":        "其他",
-            "sensitive":    False,
-        }
-        if isinstance(field_info.json_schema_extra, dict):
-            metadata.update(field_info.json_schema_extra)
-        return metadata
-
     # ============================================================
-    # 实验复现接口 (to_audit_snapshot / from_audit_snapshot)
+    # 元数据反射 / 审计快照 / 敏感 mask
+    #   ★ 六件套都在父类 SettingsBase 里(字段无关), 这里不再重复定义 ——
+    #     D3/D4/保留策略的配置类与 YOLOTrainConfig 共用同一份实现, 不会漂移。
     # ============================================================
-
-    def to_audit_snapshot(self) -> Dict[str, Any]:
-        """返回可序列化的完整快照, 用于实验复现.
-
-        Returns:
-            {
-                "config_class":  类名 (如 "YOLOTrainConfig"),
-                "config_module": 模块路径,
-                "frozen_at":     ISO 时间戳,
-                "values":        所有字段值,
-            }
-        """
-        return {
-            "config_class":  self.__class__.__name__,
-            "config_module": self.__class__.__module__,
-            "frozen_at":     datetime.now().isoformat(timespec="seconds"),
-            "values":        self.model_dump(),
-        }
-
-    @classmethod
-    def from_audit_snapshot(cls, snapshot: Dict[str, Any]) -> "BaseConfig":
-        """从快照恢复配置实例 (走完整 Pydantic 验证).
-
-        Raises:
-            ValueError:        快照类名与 cls 不匹配
-            ValidationError:   快照值非法 (字段定义可能已演进)
-        """
-        expected = cls.__name__
-        got = snapshot.get("config_class")
-        if got != expected:
-            raise ValueError(
-                f"快照来自配置类 {got!r}, 不能恢复到 {expected!r}. "
-                f"请用 {got}.from_audit_snapshot(snapshot)."
-            )
-        return cls(**snapshot.get("values", {}))
-
-    # ============================================================
-    # 敏感字段 mask
-    # ============================================================
-
-    def mask_sensitive_dump(self) -> Dict[str, Any]:
-        """model_dump() 但 sensitive 字段值替换成 SENSITIVE_MASK.
-
-        进日志 / 报告前调用, 避免敏感数据外泄.
-        进数据库存原值时用 model_dump() (不 mask).
-        """
-        dump = self.model_dump()
-        for field_name, field_info in self.__class__.model_fields.items():
-            extra = field_info.json_schema_extra or {}
-            if not isinstance(extra, dict):
-                continue
-            if not extra.get("sensitive"):
-                continue
-            if dump.get(field_name) is None:
-                continue                              # None 不 mask, 避免误导
-            dump[field_name] = self.SENSITIVE_MASK
-        return dump
-
-    @classmethod
-    def sensitive_field_names(cls) -> set[str]:
-        """返回标了 sensitive=True 的字段名集合 (供 merger 自动 mask 用)."""
-        result: set[str] = set()
-        for name, field_info in cls.model_fields.items():
-            extra = field_info.json_schema_extra or {}
-            if isinstance(extra, dict) and extra.get("sensitive"):
-                result.add(name)
-        return result

@@ -3,6 +3,11 @@
 
 编排者不实现任何一步的细节,只做接线与次序;每步的失败语义由子系统自己定。
 产物分家:processed/(生产)+ runs/(审计 manifest)+ configs/(yaml 合格证)。
+
+★ 阈值来源(D3 配置化):全部走 TransformSettings(configs/runtime/transform.yaml,
+  由 odp-gen-config transform 生成;三源合并 CLI > YAML > DEFAULT)。
+  编排层自己【不】再 import 任何阈值常量 —— 覆盖率闸门 / 稀有类预警 / 划分默认值
+  的"唯一默认值出处"是 common/constants.py,由 TransformSettings 引用一次。
 """
 from __future__ import annotations
 
@@ -13,11 +18,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from od_platform.common import paths, stamp
-from od_platform.common.constants import (
-    COVERAGE_HARD_THRESHOLD, COVERAGE_SOFT_THRESHOLD, AnnotationFormat,
-    DEFAULT_RANDOM_STATE, DEFAULT_SPLIT_STRATEGY, DEFAULT_TRAIN_RATE, DEFAULT_VAL_RATE,
-    IMAGE_EXTENSIONS, Task,
-)
+from od_platform.common.constants import AnnotationFormat, IMAGE_EXTENSIONS, Task
 from od_platform.common.lineage import (
     SplitManifest, TOOL_VERSION, compute_data_fingerprint,
 )
@@ -33,6 +34,7 @@ from od_platform.data_pipeline.split.materializer import (
 )
 from od_platform.data_pipeline.split.split_service import split_dataset
 from od_platform.data_pipeline.split.yaml_writer import write_dataset_yaml
+from od_platform.runtime_config.transform import TransformSettings, build_transform_config
 
 logger = logging.getLogger(__name__)
 
@@ -48,21 +50,53 @@ class DatasetPipeline:
         annotation_format: str,
         *,
         task: str = Task.DETECT,
-        train_rate: float = DEFAULT_TRAIN_RATE,
-        val_rate: float = DEFAULT_VAL_RATE,
+        train_rate: Optional[float] = None,
+        val_rate: Optional[float] = None,
         classes: Optional[List[str]] = None,
-        random_state: int = DEFAULT_RANDOM_STATE,
-        split_strategy: str = DEFAULT_SPLIT_STRATEGY,
+        random_state: Optional[int] = None,
+        split_strategy: Optional[str] = None,
+        settings: Optional[TransformSettings] = None,
         run: Optional[RunContext] = None,
     ):
+        """★ 阈值/比例一律读 settings, 不再直接 import 常量.
+
+        Args:
+            settings: D3 配置(TransformSettings)。None 时用 build_transform_config()
+                      的默认值 —— 既有调用点(DatasetPipeline("demo", "pascal_voc"))
+                      行为完全不变。
+            train_rate / val_rate / random_state / split_strategy / classes:
+                      【显式覆盖】, 优先级高于 settings(给"不走 yaml 的调用点"留的后门)。
+                      None = 没表态 = 用 settings 里的值。
+        """
         self.dataset = dataset
         self.annotation_format = annotation_format
         self.task = task
-        self.train_rate = train_rate
-        self.val_rate = val_rate
-        self.classes = classes
-        self.random_state = random_state
-        self.split_strategy = split_strategy
+
+        # 生效配置 = 传入的 settings(或默认) + 显式覆盖(覆盖值走一次完整校验)
+        if settings is None:
+            # 默认配置: build_transform_config() 与 build_train_config 同构,
+            # 返回 (config, merger); 编排层只要 config, 溯源在 CLI 那边打。
+            settings, _merger = build_transform_config()
+        self.settings: TransformSettings = settings
+        explicit = {
+            "train_rate":    train_rate,
+            "val_rate":      val_rate,
+            "classes":       classes,
+            "random_state":  random_state,
+            "split_strategy": split_strategy,
+        }
+        given = {name: value for name, value in explicit.items() if value is not None}
+        if given:
+            self.settings = self.settings.model_validate(
+                {**self.settings.model_dump(), **given})
+
+        # 从生效配置取值(保留原有实例属性名: 外部/测试仍在读 pipeline.train_rate)
+        self.train_rate = self.settings.train_rate
+        self.val_rate = self.settings.val_rate
+        self.classes = self.settings.classes
+        self.random_state = self.settings.random_state
+        self.split_strategy = self.settings.split_strategy
+
         self._run_ctx = run        # 存成私有名:实例属性不能遮蔽 run() 方法
         self.raw_root = paths.raw_dataset_root(dataset)
         self.raw_images = self.raw_root / "images"
@@ -108,15 +142,18 @@ class DatasetPipeline:
         ann_dir = self._annotation_dir()
         n_annos = len(list(ann_dir.glob("*.*"))) if ann_dir.exists() else 0
         coverage = n_annos / n_images
-        if coverage < COVERAGE_HARD_THRESHOLD:
+        # ★ 两个阈值都来自 TransformSettings(唯一默认值出处: common/constants.py)
+        hard = self.settings.coverage_hard_threshold
+        soft = self.settings.coverage_soft_threshold
+        if coverage < hard:
             raise ValueError(
                 f"图像-标注覆盖率 {coverage:.1%} 低于硬阈值 "
-                f"{COVERAGE_HARD_THRESHOLD:.0%}(图 {n_images} / 标注 {n_annos})。"
+                f"{hard:.0%}(图 {n_images} / 标注 {n_annos})。"
                 f"疑似标注导出中断或路径配错 —— 请修源头,不要带病训练。")
-        if coverage < COVERAGE_SOFT_THRESHOLD:
+        if coverage < soft:
             logger.warning(
                 "图像-标注覆盖率 %.1f%% 低于软阈值 %.0f%%,继续但请确认是有意为之",
-                coverage * 100, COVERAGE_SOFT_THRESHOLD * 100)
+                coverage * 100, soft * 100)
 
     # ---- 扫描:转换产物 → 内存结构 ----
 
@@ -171,7 +208,8 @@ class DatasetPipeline:
             report = analyze_balance(
                 dict(labels_per_image), classes,
                 min_split_rate=min(self.train_rate, self.val_rate,
-                                   1 - self.train_rate - self.val_rate))
+                                   self.settings.test_rate),
+                warn_min_expected=self.settings.rare_warn_min_expected)
             for line in format_report(report):
                 logger.info(line)
             warn_if_rare(report)
@@ -185,8 +223,7 @@ class DatasetPipeline:
             manifest = SplitManifest.build(
                 dataset=self.dataset, strategy=self.split_strategy,
                 seed=self.random_state,
-                ratios=(self.train_rate, self.val_rate,
-                        round(1 - self.train_rate - self.val_rate, 6)),
+                ratios=(self.train_rate, self.val_rate, self.settings.test_rate),
                 names=classes, splits=splits, label_bytes=label_bytes,
                 created_at=run.created_at)
             manifest_path = run.artifact_path("manifest.json")

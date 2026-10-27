@@ -46,6 +46,12 @@ dev = [
     "mypy>=1.5.0",
     "pre-commit>=3.4.0",
 ]
+# odp-demo 的界面依赖。★ 可选: 引擎本体(torch/ultralytics/pydantic)不需要它,
+# CI 也不装它 —— visualization/gradio_app.py 顶层不 import gradio(main() 里才延迟 import),
+# 所以 `pip install -e "apps/platform[dev]"` 之后 pytest 照样全绿。
+ui = [
+    "gradio>=4.0",
+]
 
 
 # =============================================================================
@@ -61,6 +67,8 @@ odp-train = "od_platform.cli.train_model:main"
 odp-infer = "od_platform.cli.infer:main"
 odp-eval = "od_platform.cli.evaluate_model:main"
 odp-clean = "od_platform.cli.clean_runs:main"
+# Gradio 演示界面(需要可选依赖 [ui]; 未装 gradio 时 main() 给中文提示并以非 0 退出码结束)
+odp-demo = "od_platform.visualization.gradio_app:main"
 
 
 # =============================================================================
@@ -77,19 +85,15 @@ path = "src/od_platform/_version.py"
 
 
 # =============================================================================
-# Pytest 配置(端内测试: 从 apps/platform 目录跑 pytest 时生效)
+# 注意: 这里【不】再放 [tool.pytest.ini_options]
+#
+# 本仓库的 pytest 配置只有一处 —— 仓库根 pyproject.toml 的 [tool.pytest.ini_options]
+# (testpaths / markers / addopts / filterwarnings 全在那儿)。
+#
+# 曾经这里也有一份, 后果是两份配置互相遮盖(按"离测试最近的 inifile 生效"规则, 从仓库根
+# 跑 pytest 时生效的是这一份): 仓库根声明的 markers 失效 → 测试里写 @pytest.mark.unit
+# 直接 collection error。这正是 ADR-006「一切皆配置」要消灭的"同一默认值存在多处"。
+#
+# 从 apps/platform 目录跑 pytest 时, pytest 会自动向上找到仓库根的 pyproject.toml,
+# 行为与在仓库根执行一致。
 # =============================================================================
-[tool.pytest.ini_options]
-testpaths        = ["tests"]
-python_files     = ["test_*.py"]
-python_classes   = ["Test*"]
-python_functions = ["test_*"]
-addopts = [
-    "-v",
-    "--strict-markers",      # 拼错的 mark 立刻报错,不再静默不跑
-    "--tb=short",
-]
-filterwarnings = [
-    # 业务代码用 warnings.warn 发的提示,测试里要能捕获
-    "default::UserWarning",
-]

@@ -16,6 +16,8 @@ _NAME = "split_uniqueness"
 @check(_NAME)
 def validate_split_uniqueness(ctx: CheckContext) -> CheckResult:
     snap = ctx.snapshot
+    # ★ 上限来自 D4 配置(ctx.settings); 读不到回落 constants(唯一默认值出处)
+    preview_limit = ctx.setting("details_preview_limit", DETAILS_PREVIEW_LIMIT)
     splits_of_stem = defaultdict(list)
     for split in snap.splits:
         for img in snap.images_per_split[split]:
@@ -27,4 +29,4 @@ def validate_split_uniqueness(ctx: CheckContext) -> CheckResult:
                            f"全部 {len(splits_of_stem)} 个样本分属唯一 split", {})
     return CheckResult(_NAME, CheckSeverity.ERROR,
                        f"{len(leaked)} 个样本泄漏到多个 split — 数据泄漏,评估不可信",
-                       {"leaked_preview": leaked[:DETAILS_PREVIEW_LIMIT]})
+                       {"leaked_preview": leaked[:preview_limit]})

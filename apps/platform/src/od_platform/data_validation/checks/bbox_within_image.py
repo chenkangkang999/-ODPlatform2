@@ -16,12 +16,17 @@ from od_platform.data_validation.registry import (
 _NAME = "bbox_within_image"
 
 
-def _overflow_amount(coords: List[float]) -> float:
-    """cx,cy,w,h → 出界量(不出界为 0;容差 BBOX_EDGE_TOLERANCE)。"""
+def _overflow_amount(coords: List[float],
+                     tolerance: float = BBOX_EDGE_TOLERANCE) -> float:
+    """cx,cy,w,h → 出界量(不出界为 0;容差 BBOX_EDGE_TOLERANCE).
+
+    tolerance 走参数而不是函数体里读常量: 默认值是"回落值",
+    真正生效的值由调用方(ctx.settings)传进来。
+    """
     cx, cy, w, h = coords
     overflow = max(0 - (cx - w / 2), (cx + w / 2) - 1,
                    0 - (cy - h / 2), (cy + h / 2) - 1)
-    return max(0.0, overflow - BBOX_EDGE_TOLERANCE)
+    return max(0.0, overflow - tolerance)
 
 
 @check(_NAME)
@@ -31,6 +36,10 @@ def validate_bbox_within_image(ctx: CheckContext) -> CheckResult:
         return CheckResult(_NAME, CheckSeverity.PASS,
                            "task=segment,出界检查仅适用 detect(多边形顶点允许在外)",
                            {"reason": "task_not_applicable"})
+    # ★ 阈值来自 D4 配置(ctx.settings); 读不到回落 constants(唯一默认值出处)
+    error_ratio = ctx.setting("bbox_out_error_ratio", BBOX_OUT_ERROR_RATIO)
+    tolerance = ctx.setting("bbox_edge_tolerance", BBOX_EDGE_TOLERANCE)
+    preview_limit = ctx.setting("details_preview_limit", DETAILS_PREVIEW_LIMIT)
     out_boxes: List[dict] = []
     n_out = n_total = n_skipped = 0
     for split in snap.splits:
@@ -48,21 +57,21 @@ def validate_bbox_within_image(ctx: CheckContext) -> CheckResult:
                     n_skipped += 1                     # 结构错误:label_format 已报,跳过
                     continue
                 n_total += 1
-                if _overflow_amount(box[1]) > 0:
+                if _overflow_amount(box[1], tolerance) > 0:
                     n_out += 1
-                    if len(out_boxes) < DETAILS_PREVIEW_LIMIT:
+                    if len(out_boxes) < preview_limit:
                         out_boxes.append({"split": split, "label": str(lbl),
                                           "line_no": line_no, "coords": box[1]})
     details = {"total_boxes": n_total, "n_out": n_out,
                "out_ratio": round(n_out / n_total, 4) if n_total else 0.0,
                "skipped_structure_errors": n_skipped,
-               "thresholds": {"error_ratio": BBOX_OUT_ERROR_RATIO,
-                              "edge_tolerance": BBOX_EDGE_TOLERANCE},
+               "thresholds": {"error_ratio": error_ratio,
+                              "edge_tolerance": tolerance},
                "out_boxes_preview": out_boxes}
     if n_total == 0:
         return CheckResult(_NAME, CheckSeverity.PASS, "没有可检查的框", details)
     ratio = n_out / n_total
-    if ratio >= BBOX_OUT_ERROR_RATIO:
+    if ratio >= error_ratio:
         return CheckResult(_NAME, CheckSeverity.ERROR,
                            f"{n_out}/{n_total} 个框出界({ratio:.1%})", details)
     if n_out:

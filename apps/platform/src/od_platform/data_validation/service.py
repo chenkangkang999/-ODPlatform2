@@ -22,6 +22,7 @@ from od_platform.data_validation.registry import (
 )
 from od_platform.data_validation.report import ValidationReport
 from od_platform.data_validation.snapshot import build_snapshot
+from od_platform.runtime_config.validate import ValidateSettings, build_validate_config
 
 logger = logging.getLogger(__name__)
 
@@ -41,13 +42,25 @@ def run_all_checks(ctx: CheckContext) -> List[CheckResult]:
 
 def validate_dataset(yaml_path, task_type: Optional[str] = None,
                      run_id: Optional[str] = None,
-                     write_report: bool = True) -> ValidationReport:
-    """端到端:快照 → 全量 check → 报告(logger + json/csv)。"""
+                     write_report: bool = True,
+                     settings: Optional[ValidateSettings] = None) -> ValidationReport:
+    """端到端:快照 → 全量 check → 报告(logger + json/csv)。
+
+    Args:
+        settings: D4 质检阈值(ValidateSettings)。None 时用 build_validate_config()
+                  的默认值 —— 既有调用点(validate_dataset(yaml, ...))行为不变。
+                  CLI(odp-validate --yaml)负责把 yaml 合并进来后传到这里;
+                  它也随 CheckContext 一起下发给 15 个 check(ctx.setting)。
+    """
     t0 = time.perf_counter()
     run_id = run_id or datetime.now().strftime("%Y%m%d-%H%M%S")
     yaml_path = Path(yaml_path)
+    if settings is None:
+        # 返回 (config, merger), 服务层只要 config(溯源在 CLI 那边打)
+        settings, _merger = build_validate_config()
     snapshot = build_snapshot(yaml_path, task_type=task_type)
-    results = run_all_checks(CheckContext(yaml_path=yaml_path, snapshot=snapshot))
+    results = run_all_checks(
+        CheckContext(yaml_path=yaml_path, snapshot=snapshot, settings=settings))
     report = ValidationReport(run_id=run_id, snapshot=snapshot, results=results,
                               duration_seconds=time.perf_counter() - t0)
     # ★ 历史对比: 找同一份 yaml 上一次的 report.json 做差集。

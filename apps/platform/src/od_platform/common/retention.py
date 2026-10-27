@@ -32,8 +32,14 @@
 
 ★ 配置来源
 
-    策略参数由**代码默认值**（本模块的 DEFAULT_* 常量）与 ``odp-clean`` 的命令行
-    参数提供, 不读取 runtime yaml; 本仓库当前没有任何 yaml 承载保留策略字段。
+    策略参数有三个来源, 优先级 CLI > YAML > DEFAULT:
+      · DEFAULT —— 本模块的 ``DEFAULT_KEEP_LATEST`` / ``DEFAULT_MAX_AGE_DAYS``
+        (**唯一默认值出处**; ``CleanSettings`` 的字段默认值直接引用它们, 不抄字面量)
+      · YAML    —— ``configs/runtime/clean.yaml``(odp-gen-config clean 生成)
+      · CLI     —— ``odp-clean`` 的 --keep-latest / --max-age-days / --protect
+    三源合并与逐字段溯源由 :mod:`od_platform.runtime_config` 负责
+    (``build_clean_config`` → ``ConfigMerger``), 映射只写一次:
+    :meth:`RetentionPolicy.from_settings`。
 """
 from __future__ import annotations
 
@@ -42,9 +48,12 @@ import shutil
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 from od_platform.common import paths
+
+if TYPE_CHECKING:                                        # 只为类型标注, 运行时不 import
+    from od_platform.runtime_config.clean import CleanSettings
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +78,19 @@ class RetentionPolicy:
             raise ValueError(f"keep_latest_per_group 必须 >= 1, 收到 {self.keep_latest_per_group}")
         if self.max_age_days < 0:
             raise ValueError(f"max_age_days 不能为负, 收到 {self.max_age_days}")
+
+    @classmethod
+    def from_settings(cls, settings: "CleanSettings") -> "RetentionPolicy":
+        """从 ``CleanSettings``(configs/runtime/clean.yaml 的模型)构造策略.
+
+        ★ "配置字段 → 策略字段"的映射只写这一处: odp-clean 与任何未来调用点共用它,
+          免得 CLI 里再抄一份字段对应关系。
+        """
+        return cls(
+            keep_latest_per_group=settings.keep_latest,
+            max_age_days=settings.max_age_days,
+            extra_protected=settings.extra_protected,
+        )
 
     @property
     def protected(self) -> Tuple[str, ...]:

@@ -34,6 +34,8 @@ def validate_manifest_lineage(ctx: CheckContext) -> CheckResult:
     if err:
         return CheckResult(_NAME, CheckSeverity.ERROR, f"拿不到 D3 划分契约: {err}", {})
     snap = ctx.snapshot
+    # ★ 上限来自 D4 配置(ctx.settings); 读不到回落 constants(唯一默认值出处)
+    max_detail = ctx.setting("lineage_max_detail", LINEAGE_MAX_DETAIL)
 
     # 磁盘实况:(split, stem) → 标签路径;stem → 实际出现的 split 集合
     disk: Dict[Tuple[str, str], Path] = {}
@@ -63,9 +65,9 @@ def validate_manifest_lineage(ctx: CheckContext) -> CheckResult:
 
     details = {"n_samples": len(manifest.samples),
                "n_changed": len(changed), "n_moved": len(moved), "n_missing": len(missing),
-               "changed_preview": changed[:LINEAGE_MAX_DETAIL],
-               "moved_preview": moved[:LINEAGE_MAX_DETAIL],
-               "missing_preview": missing[:LINEAGE_MAX_DETAIL]}
+               "changed_preview": changed[:max_detail],
+               "moved_preview": moved[:max_detail],
+               "missing_preview": missing[:max_detail]}
     if changed or moved or missing:
         return CheckResult(
             _NAME, CheckSeverity.ERROR,

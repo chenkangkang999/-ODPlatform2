@@ -17,6 +17,8 @@ _NAME = "duplicate_annotations"
 @check(_NAME)
 def validate_duplicate_annotations(ctx: CheckContext) -> CheckResult:
     snap = ctx.snapshot
+    # ★ 上限来自 D4 配置(ctx.settings); 读不到回落 constants(唯一默认值出处)
+    preview_limit = ctx.setting("details_preview_limit", DETAILS_PREVIEW_LIMIT)
     dup_rows = 0
     files_with_dup = 0
     previews: List[dict] = []
@@ -32,7 +34,7 @@ def validate_duplicate_annotations(ctx: CheckContext) -> CheckResult:
             if dups:
                 files_with_dup += 1
                 dup_rows += sum(n - 1 for n in dups.values())
-                if len(previews) < DETAILS_PREVIEW_LIMIT:
+                if len(previews) < preview_limit:
                     previews.append({"split": split, "label": str(lbl), "dup": dups})
     details = {"dup_rows": dup_rows, "files_with_dup": files_with_dup,
                "previews": previews,

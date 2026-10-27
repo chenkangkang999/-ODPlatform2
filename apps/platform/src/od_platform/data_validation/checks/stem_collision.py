@@ -16,6 +16,8 @@ _NAME = "stem_collision"
 @check(_NAME)
 def validate_stem_collision(ctx: CheckContext) -> CheckResult:
     snap = ctx.snapshot
+    # ★ 上限来自 D4 配置(ctx.settings); 读不到回落 constants(唯一默认值出处)
+    preview_limit = ctx.setting("details_preview_limit", DETAILS_PREVIEW_LIMIT)
     collisions: List[dict] = []
     for split in snap.splits:
         by_stem = defaultdict(list)
@@ -28,4 +30,4 @@ def validate_stem_collision(ctx: CheckContext) -> CheckResult:
         return CheckResult(_NAME, CheckSeverity.PASS, "无同名多扩展名冲突", {})
     return CheckResult(_NAME, CheckSeverity.WARNING,
                        f"{len(collisions)} 个同名多扩展名冲突 — 多张图映射到同一标签,需人工裁决",
-                       {"collisions_preview": collisions[:DETAILS_PREVIEW_LIMIT]})
+                       {"collisions_preview": collisions[:preview_limit]})

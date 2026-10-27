@@ -20,17 +20,23 @@ KIND_TINY_AREA = "tiny_area"
 KIND_EXTREME_AR = "extreme_aspect_ratio"
 
 
-def _geometry_issue(coords: List[float]) -> Optional[Tuple[str, str]]:
-    """(kind, detail) 或 None。if-chain:退化优先于极端宽高比。"""
+def _geometry_issue(coords: List[float],
+                    degenerate_min_size: float = DEGENERATE_BOX_MIN_SIZE,
+                    max_aspect_ratio: float = STATS_MAX_ASPECT_RATIO,
+                    ) -> Optional[Tuple[str, str]]:
+    """(kind, detail) 或 None。if-chain:退化优先于极端宽高比。
+
+    两个阈值的默认值是"回落值"; 真正生效的值由调用方(ctx.settings)传进来。
+    """
     _cx, _cy, w, h = coords
     if w <= 0:
         return KIND_ZERO_WIDTH, f"w={w}"
     if h <= 0:
         return KIND_ZERO_HEIGHT, f"h={h}"
-    if w < DEGENERATE_BOX_MIN_SIZE or h < DEGENERATE_BOX_MIN_SIZE:
+    if w < degenerate_min_size or h < degenerate_min_size:
         return KIND_TINY_AREA, f"w={w}, h={h}"
     ratio = max(w / h, h / w)
-    if ratio >= STATS_MAX_ASPECT_RATIO:
+    if ratio >= max_aspect_ratio:
         return KIND_EXTREME_AR, f"aspect={ratio:.1f}"
     return None
 
@@ -42,6 +48,10 @@ def validate_box_geometry(ctx: CheckContext) -> CheckResult:
         return CheckResult(_NAME, CheckSeverity.PASS,
                            f"task={snap.task_type},几何检查仅适用 detect",
                            {"reason": "task_not_applicable"})
+    # ★ 阈值来自 D4 配置(ctx.settings); 读不到回落 constants(唯一默认值出处)
+    degenerate_min_size = ctx.setting("degenerate_box_min_size", DEGENERATE_BOX_MIN_SIZE)
+    max_aspect_ratio = ctx.setting("stats_max_aspect_ratio", STATS_MAX_ASPECT_RATIO)
+    preview_limit = ctx.setting("details_preview_limit", DETAILS_PREVIEW_LIMIT)
     issue_kinds: Dict[str, int] = {}
     bad_boxes: List[dict] = []
     total_boxes = n_skipped = 0
@@ -60,18 +70,18 @@ def validate_box_geometry(ctx: CheckContext) -> CheckResult:
                     n_skipped += 1
                     continue
                 total_boxes += 1
-                issue = _geometry_issue(box[1])
+                issue = _geometry_issue(box[1], degenerate_min_size, max_aspect_ratio)
                 if issue is not None:
                     kind_s, detail = issue
                     issue_kinds[kind_s] = issue_kinds.get(kind_s, 0) + 1
-                    if len(bad_boxes) < DETAILS_PREVIEW_LIMIT:
+                    if len(bad_boxes) < preview_limit:
                         bad_boxes.append({"split": split, "label": str(lbl),
                                           "line_no": line_no, "kind": kind_s,
                                           "detail": detail})
     details = {"total_boxes": total_boxes, "issue_kinds": issue_kinds,
                "skipped_structure_errors": n_skipped,
-               "thresholds": {"degenerate_min_size": DEGENERATE_BOX_MIN_SIZE,
-                              "max_aspect_ratio": STATS_MAX_ASPECT_RATIO},
+               "thresholds": {"degenerate_min_size": degenerate_min_size,
+                              "max_aspect_ratio": max_aspect_ratio},
                "bad_boxes_preview": bad_boxes}
     if not issue_kinds:
         return CheckResult(_NAME, CheckSeverity.PASS,

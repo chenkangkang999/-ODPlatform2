@@ -32,6 +32,8 @@ def _validate_one_line(line: str, task_type: str,
 @check(_NAME)
 def validate_label_format(ctx: CheckContext) -> CheckResult:
     snap = ctx.snapshot
+    # ★ 上限来自 D4 配置(ctx.settings); 读不到回落 constants(唯一默认值出处)
+    preview_limit = ctx.setting("details_preview_limit", DETAILS_PREVIEW_LIMIT)
     nc = snap.nc
     if not isinstance(nc, int):
         return CheckResult(_NAME, CheckSeverity.PASS,
@@ -54,7 +56,7 @@ def validate_label_format(ctx: CheckContext) -> CheckResult:
                 if kind is not None:
                     n_bad += 1
                     error_kinds[kind] = error_kinds.get(kind, 0) + 1
-                    if len(bad_lines) < DETAILS_PREVIEW_LIMIT:
+                    if len(bad_lines) < preview_limit:
                         bad_lines.append({"split": split, "label": str(lbl),
                                           "line_no": line_no, "kind": kind,
                                           "line": line})

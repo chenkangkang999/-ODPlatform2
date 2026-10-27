@@ -9,7 +9,9 @@
 公共 API:
 
   配置类:
-      BaseConfig, YOLOTrainConfig, YOLOValConfig
+      BaseConfig, YOLOTrainConfig, YOLOValConfig, YOLOInferConfig
+      SettingsBase(无业务字段的能力基类)
+      TransformSettings(D3 数据流水线) / ValidateSettings(D4 质检) / CleanSettings(保留策略)
 
   加载器(外部数据 → dict):
       YAMLLoader, CLILoader, load_all_sources
@@ -25,7 +27,8 @@
 
   一键 build:
       build_train_config, build_val_config, build_infer_config
-      (三者共用内部 _build_config; 差异只有配置类与默认 yaml 名)
+      build_transform_config, build_validate_config, build_clean_config
+      (全部共用内部 _build_config; 差异只有配置类与默认 yaml 名)
 
 不公开:
   - _build_config 等内部实现
@@ -57,10 +60,26 @@ from typing   import Any, Dict, List, Mapping, Optional, Tuple, Type, TypeVar, U
 from pydantic import BaseModel
 
 # 配置类
-from od_platform.runtime_config.base   import BaseConfig
+from od_platform.runtime_config.base   import BaseConfig, SettingsBase
 from od_platform.runtime_config.train  import YOLOTrainConfig
 from od_platform.runtime_config.val    import YOLOValConfig
 from od_platform.runtime_config.infer  import YOLOInferConfig   # ★ infer 闭环
+
+# D3 / D4 / 保留策略的配置类 + 各自的一键 build
+# ★ 它们继承 SettingsBase(0 个业务字段的能力基类), 不继承 BaseConfig ——
+#   transform/validate/clean 的模板里只有各自真正用得到的字段。
+from od_platform.runtime_config.transform import (
+    TransformSettings,
+    build_transform_config,
+)
+from od_platform.runtime_config.validate import (
+    ValidateSettings,
+    build_validate_config,
+)
+from od_platform.runtime_config.clean import (
+    CleanSettings,
+    build_clean_config,
+)
 
 # 加载器
 from od_platform.runtime_config.loaders import (
@@ -278,9 +297,13 @@ def build_infer_config(
 __all__ = [
     # 配置类
     "BaseConfig",
+    "SettingsBase",             # ★ 无业务字段的能力基类(D3/D4/保留策略的父类)
     "YOLOTrainConfig",
     "YOLOValConfig",
     "YOLOInferConfig",          # ★ infer 闭环
+    "TransformSettings",        # ★ D3 数据流水线
+    "ValidateSettings",         # ★ D4 数据质检
+    "CleanSettings",            # ★ runs/ 保留策略
 
     # 加载器
     "YAMLLoader",
@@ -302,4 +325,7 @@ __all__ = [
     "build_train_config",
     "build_val_config",
     "build_infer_config",        # ★ infer 闭环
+    "build_transform_config",    # ★ D3 数据流水线
+    "build_validate_config",     # ★ D4 数据质检
+    "build_clean_config",        # ★ runs/ 保留策略
 ]

@@ -16,6 +16,8 @@ _NAME = "split_presence"
 @check(_NAME)
 def validate_split_presence(ctx: CheckContext) -> CheckResult:
     snap = ctx.snapshot
+    # ★ 阈值来自 D4 配置(ctx.settings); 读不到回落 constants(唯一默认值出处)
+    min_images = ctx.setting("split_min_images", SPLIT_MIN_IMAGES)
     findings: List[Dict[str, Any]] = []
     for w in snap.scan_warnings:
         if "split" in w:
@@ -32,9 +34,9 @@ def validate_split_presence(ctx: CheckContext) -> CheckResult:
                          "message": "yaml 未声明 test 划分 — 无最终诚实评估"})
     for s in snap.splits:
         n = len(snap.images_per_split[s])
-        if n < SPLIT_MIN_IMAGES:
+        if n < min_images:
             findings.append({"severity": CheckSeverity.INFO,
-                             "message": f"{s} 划分共 {n} 张,低于 {SPLIT_MIN_IMAGES},"
+                             "message": f"{s} 划分共 {n} 张,低于 {min_images},"
                                         f"评估方差偏大(提示)"})
     if not findings:
         return CheckResult(_NAME, CheckSeverity.PASS,

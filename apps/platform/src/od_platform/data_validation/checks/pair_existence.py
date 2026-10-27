@@ -17,6 +17,10 @@ _NAME = "pair_existence"
 @check(_NAME)
 def validate_pair_existence(ctx: CheckContext) -> CheckResult:
     snap = ctx.snapshot
+    # ★ 阈值来自 D4 配置(ctx.settings); 读不到回落 constants(唯一默认值出处)
+    max_detail = ctx.setting("pair_max_detail", PAIR_MAX_DETAIL)
+    error_ratio = ctx.setting("pair_missing_error_ratio", PAIR_MISSING_ERROR_RATIO)
+    warn_ratio = ctx.setting("pair_missing_warn_ratio", PAIR_MISSING_WARN_RATIO)
     missing: List[dict] = []
     total = 0
     for split in snap.splits:
@@ -29,13 +33,13 @@ def validate_pair_existence(ctx: CheckContext) -> CheckResult:
     ratio = len(missing) / total
     details = {"total_images": total, "missing": len(missing),
                "missing_ratio": round(ratio, 4),
-               "missing_preview": missing[:PAIR_MAX_DETAIL],
-               "thresholds": {"error": PAIR_MISSING_ERROR_RATIO,
-                              "warn": PAIR_MISSING_WARN_RATIO}}
-    if ratio >= PAIR_MISSING_ERROR_RATIO:
+               "missing_preview": missing[:max_detail],
+               "thresholds": {"error": error_ratio,
+                              "warn": warn_ratio}}
+    if ratio >= error_ratio:
         return CheckResult(_NAME, CheckSeverity.ERROR,
                            f"{len(missing)}/{total} 张图缺标签({ratio:.1%})— 疑似导出中断", details)
-    if ratio >= PAIR_MISSING_WARN_RATIO:
+    if ratio >= warn_ratio:
         return CheckResult(_NAME, CheckSeverity.WARNING,
                            f"{len(missing)}/{total} 张图缺标签({ratio:.1%})", details)
     if missing:

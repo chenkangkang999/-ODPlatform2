@@ -18,6 +18,9 @@ _NAME = "class_balance"
 @check(_NAME)
 def validate_class_balance(ctx: CheckContext) -> CheckResult:
     snap = ctx.snapshot
+    # ★ 阈值来自 D4 配置(ctx.settings); 读不到回落 constants(唯一默认值出处)
+    warn_ratio = ctx.setting("stats_max_imbalance_ratio", STATS_MAX_IMBALANCE_RATIO)
+    info_ratio = ctx.setting("class_imbalance_info_ratio", CLASS_IMBALANCE_INFO_RATIO)
     findings: List[Dict[str, Any]] = []
     for split, st in snap.stats_per_split.items():
         nonzero = {c: n for c, n in st.class_instances.items() if n > 0}
@@ -26,9 +29,9 @@ def validate_class_balance(ctx: CheckContext) -> CheckResult:
         max_c = max(nonzero, key=nonzero.get)
         min_c = min(nonzero, key=nonzero.get)
         ratio = nonzero[max_c] / nonzero[min_c]
-        if ratio >= STATS_MAX_IMBALANCE_RATIO:
+        if ratio >= warn_ratio:
             sev = CheckSeverity.WARNING
-        elif ratio >= CLASS_IMBALANCE_INFO_RATIO:
+        elif ratio >= info_ratio:
             sev = CheckSeverity.INFO
         else:
             continue

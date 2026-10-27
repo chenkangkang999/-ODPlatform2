@@ -44,7 +44,12 @@ ignore_missing_imports = true
 
 
 # =============================================================================
-# Pytest 配置(测试发现 + 标记)
+# Pytest 配置(测试发现 + 标记) —— 全仓【唯一】一份
+#
+# ★ ADR-006「一切皆配置」: 这一份是唯一真相。端内( apps/platform/ )不要再放
+#   [tool.pytest.ini_options], 否则两份配置按"离测试最近者生效"互相遮盖, 结果就是
+#   markers/addopts 在某个目录下静默失效(曾导致测试里的 @pytest.mark.unit 直接
+#   collection error)。
 # =============================================================================
 [tool.pytest.ini_options]
 minversion = "7.0"
@@ -53,10 +58,17 @@ testpaths = [
     "tests",
 ]
 python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
 addopts = ["-v", "--strict-markers", "--tb=short"]
 
 markers = [
     "unit: 单元测试 (快,无 IO)",
     "integration: 集成测试 (有 IO)",
     "slow: 慢测试 (> 1s)",
+]
+
+filterwarnings = [
+    # 业务代码用 warnings.warn 发的提示,测试里要能捕获
+    "default::UserWarning",
 ]

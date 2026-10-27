@@ -163,7 +163,12 @@ class ConfigGenerator:
         lines.append("# A: 是的, 命令行参数优先级最高: CLI > YAML > DEFAULT")
         lines.append("#")
         lines.append("# Q: 如何恢复默认配置?")
-        lines.append("# A: 删除此文件, 程序会自动报错并提示重新生成")
+        # ★ 两种配置的"文件缺失"语义不同(见 SettingsBase.CONFIG_FILE_OPTIONAL):
+        #   必选型 → 缺文件即报错; 可选型 → 缺文件退化成"全用默认值"
+        if getattr(config_class, "CONFIG_FILE_OPTIONAL", False):
+            lines.append("# A: 直接删除此文件 —— 缺失的配置按「全用默认值」处理(该命令不因缺配置而报错)")
+        else:
+            lines.append("# A: 删除此文件, 程序会自动报错并提示重新生成")
         lines.append("#")
         lines.append("# Q: 如何用新版默认值重新生成此模板?")
         lines.append("# A: 跑 'odp-gen-config <name> --overwrite' (会自动备份原文件)")
@@ -238,8 +243,29 @@ class ConfigGenerator:
             # 当前没有顶层 dict 字段, 简化处理
             return "{}"
 
-        # 数字 / 其他类型
+        if isinstance(value, float):
+            return self._format_float(value)
+
+        # 数字 / 其他类型 (int 走这里: bool 已在最前面拦下)
         return str(value)
+
+    # ---- float 纯量格式化 (YAML float 语法安全) ----
+
+    @staticmethod
+    def _format_float(value: float) -> str:
+        """float → YAML 纯量, 保证 ``yaml.safe_load`` 读回来还是 float.
+
+        ★ 回归钉子(2026-10): 旧实现把 float 交给 ``str()``, 于是
+          ``str(1e-06) == "1e-06"`` —— 尾数没有小数点, 不是合法的 YAML float,
+          safe_load 会把它读成【字符串 "1e-06"】, 于是"模板 == 代码默认值"的契约
+          在 BBOX_EDGE_TOLERANCE(1e-06) 上当场破掉(见 tests/runtime_config/
+          test_new_settings.py 的契约测试)。
+          这里把格式化交给 PyYAML 自己的 representer: 1e-06 → 1.0e-06,
+          读回来仍是 float 1e-06。其余 float(0.001 / 0.5 / 20.0)输出与旧实现逐字节一致。
+        """
+        dumped = yaml.safe_dump(value, default_flow_style=True)
+        # 顶层纯量文档会被补一个显式结束标记("..."), 字段值里不能带它 → 只取第一行
+        return dumped.splitlines()[0].strip()
 
     # ---- 字符串纯量格式化 (round-trip 安全) ----
 
@@ -306,7 +332,7 @@ def main():
     parser.add_argument(
         "name",
         choices=list(CONFIG_REGISTRY),                # ★ 合法取值也由那张共享表说了算
-        help="要生成的配置名 (train / val / infer)",
+        help="要生成的配置名 (" + " / ".join(CONFIG_REGISTRY) + ")",
     )
     parser.add_argument(
         "-o", "--output",

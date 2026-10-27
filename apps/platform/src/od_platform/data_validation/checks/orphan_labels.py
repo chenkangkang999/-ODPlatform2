@@ -15,6 +15,9 @@ _NAME = "orphan_labels"
 @check(_NAME)
 def validate_orphan_labels(ctx: CheckContext) -> CheckResult:
     snap = ctx.snapshot
+    # ★ 阈值来自 D4 配置(ctx.settings); 读不到回落 constants(唯一默认值出处)
+    warn_ratio = ctx.setting("orphan_labels_warn_ratio", ORPHAN_LABELS_WARN_RATIO)
+    preview_limit = ctx.setting("details_preview_limit", DETAILS_PREVIEW_LIMIT)
     orphans: List[dict] = []
     total_labels = 0
     for split in snap.splits:
@@ -29,9 +32,9 @@ def validate_orphan_labels(ctx: CheckContext) -> CheckResult:
     ratio = len(orphans) / max(total_labels, 1)
     details = {"n_orphans": len(orphans), "total_label_files": total_labels,
                "orphan_ratio": round(ratio, 4),
-               "orphans_preview": orphans[:DETAILS_PREVIEW_LIMIT],
-               "thresholds": {"warn": ORPHAN_LABELS_WARN_RATIO}}
-    if ratio >= ORPHAN_LABELS_WARN_RATIO:
+               "orphans_preview": orphans[:preview_limit],
+               "thresholds": {"warn": warn_ratio}}
+    if ratio >= warn_ratio:
         return CheckResult(_NAME, CheckSeverity.WARNING,
                            f"{len(orphans)} 个孤儿标签({ratio:.1%})— 疑似图被删了", details)
     return CheckResult(_NAME, CheckSeverity.INFO,

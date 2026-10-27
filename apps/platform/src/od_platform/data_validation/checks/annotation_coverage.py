@@ -14,6 +14,9 @@ _NAME = "annotation_coverage"
 @check(_NAME)
 def validate_annotation_coverage(ctx: CheckContext) -> CheckResult:
     snap = ctx.snapshot
+    # ★ 阈值来自 D4 配置(ctx.settings); 读不到回落 constants(唯一默认值出处)
+    warn_ratio = ctx.setting("unlabeled_warn_ratio", UNLABELED_WARN_RATIO)
+    info_ratio = ctx.setting("unlabeled_info_ratio", UNLABELED_INFO_RATIO)
     total_img = sum(st.image_count for st in snap.stats_per_split.values())
     if total_img == 0:
         return CheckResult(_NAME, CheckSeverity.INFO, "数据集没有图像", {})
@@ -22,14 +25,14 @@ def validate_annotation_coverage(ctx: CheckContext) -> CheckResult:
     ratio = unlabeled / total_img
     details = {"total_images": total_img, "unlabeled": unlabeled,
                "unlabeled_ratio": round(ratio, 4),
-               "thresholds": {"warn": UNLABELED_WARN_RATIO, "info": UNLABELED_INFO_RATIO},
+               "thresholds": {"warn": warn_ratio, "info": info_ratio},
                "per_split": {s: {"images": st.image_count, "annotated": st.annotated_count}
                              for s, st in snap.stats_per_split.items()}}
-    if ratio >= UNLABELED_WARN_RATIO:
+    if ratio >= warn_ratio:
         return CheckResult(_NAME, CheckSeverity.WARNING,
                            f"{unlabeled}/{total_img} 张图无有效标注({ratio:.1%})— 占比偏高",
                            details)
-    if ratio >= UNLABELED_INFO_RATIO:
+    if ratio >= info_ratio:
         return CheckResult(_NAME, CheckSeverity.INFO,
                            f"{unlabeled}/{total_img} 张图无有效标注({ratio:.1%})", details)
     return CheckResult(_NAME, CheckSeverity.PASS,
