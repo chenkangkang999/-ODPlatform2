@@ -34,6 +34,10 @@
 .aquatic-shell .water-workspace .assistant-note { background: #edf7fdf2; }
 .aquatic-shell .water-workspace .output-panel,
 .aquatic-shell .water-workspace .chat-panel { background: #fcfefff8; }
+.aquatic-shell .water-workspace .chat-panel { padding-bottom: 28px; }
+@media (max-width: 650px) {
+  .aquatic-shell .water-workspace .chat-panel { padding-bottom: 24px; }
+}
 
 .aquatic-shell .water-workspace .class-grid > div {
   display: flex;
