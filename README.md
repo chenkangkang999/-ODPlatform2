@@ -312,7 +312,10 @@ data/raw/<name>/labels/            # YOLO 的 *.txt（注意是 labels/ 不是 a
 产物 / 落点：`runs/detect_infer/<name>/`，`<name>` 默认 `predict`，重名自动变成 `predict2`、`predict3`…
 
 - `odp_audit.json` —— `mode / config / merger / pipeline / stats / result_summary`
-- 视频/摄像头源：`output.mp4`；图片源：每帧一张 `<原图名>.jpg`
+  （`pipeline.output` 是输出落盘的生效值，`pipeline.output_sources` 是每个字段的来源）
+- 视频/摄像头源：默认 `output.mp4`；图片源：每帧一张 `<原图名>.jpg`
+  —— 文件名前缀 / 主干 / 扩展名 / 视频编码器 / jpg 质量 / 写入帧率 / 覆盖策略
+  都由 `infer_pipeline.yaml` 的 `output` 段决定（不填 = 与原默认行为**逐字节一致**）
 - 日志 `apps/platform/logging/infer/infer_<时间戳>.log`（绝对路径；
   `common/log_rename.py` 的"搬进本次输出目录"目前是**桩**，不做实际改名）
 - 退出码：`0` 成功 / `1` 失败
@@ -333,15 +336,71 @@ data/raw/<name>/labels/            # YOLO 的 *.txt（注意是 labels/ 不是 a
 |---|---|---|---|
 | `odp-init` | 建 15 项运行时目录 + 打印环境概览与数据目录状态 | **无参数** | 目录本体；`apps/platform/logging/init_project/*.log` |
 | `odp-reset` | 撤销 init 的运行时产物（默认 dry-run） | `--yes` `--force` `--dry-run` | 清理 `data/processed/`、`runs/`、`models/trained/`、`apps/platform/logging/`；审计日志 `.odp-meta/logs/reset_project/` |
-| `odp-transform` | 原始标注 → 划分 → 物化 → 数据集 yaml | `--dataset` `--format` `--task` `--train-rate` `--val-rate` `--seed` `--split-strategy` `--classes` | `data/processed/<name>/`、`configs/datasets/<name>.yaml`、`runs/data_pipeline/<run_id>/manifest.json`、`runs/lineage/<fp>/transform.stamp.json` |
-| `odp-validate` | 15 项只读质检 + 与上次报告的历史对比，按最严聚合退出码 | `<yaml_path>`（位置） `--task` `--run-id` `--no-report` | `runs/data_validation/<run_id>/{report.json,results.csv,compare.json}`、`runs/lineage/<fp>/validate.stamp.json` |
-| `odp-gen-config` | 从 Pydantic 模型反射生成 YAML 模板 | `{train,val,infer}`（位置） `-o/--output` `--overwrite` `--no-backup` | `apps/platform/configs/runtime/<name>.yaml`（+ 覆盖时 `<name>.yaml.bak.<时间戳>`） |
+| `odp-transform` | 原始标注 → 划分 → 物化 → 数据集 yaml | `--dataset` `--format` `--task` `--yaml` `--train-rate` `--val-rate` `--seed` `--split-strategy` `--classes` | `data/processed/<name>/`、`configs/datasets/<name>.yaml`、`runs/data_pipeline/<run_id>/manifest.json`、`runs/lineage/<fp>/transform.stamp.json` |
+| `odp-validate` | 15 项只读质检 + 与上次报告的历史对比，按最严聚合退出码 | `<yaml_path>`（位置） `--yaml`（阈值配置） `--task` `--run-id` `--no-report` | `runs/data_validation/<run_id>/{report.json,results.csv,compare.json}`、`runs/lineage/<fp>/validate.stamp.json` |
+| `odp-gen-config` | 从 Pydantic 模型反射生成 YAML 模板（**默认值唯一出处**） | `{train,val,infer,demo,transform,validate,clean}`（位置） `-o/--output` `--overwrite` `--no-backup` | `apps/platform/configs/runtime/<name>.yaml`（+ 覆盖时 `<name>.yaml.bak.<时间戳>`） |
 | `odp-train` | 身份核验 → 训练 → 盖章 → 审计 → 归档 | `--config` `--data` `--model` `--epochs` `--batch` `--imgsz` `--device` `--experiment-name` `--no-archive` `--skip-validate` | `runs/training/<run_id>/`、`models/trained/<stem>-best.pt`、`runs/lineage/<fp>/train.stamp.json` |
 | `odp-eval` | 独立评估已训好模型 + IoU 匹配分析 + 置信度扫描 | `--weights` `--data`（必填）`--yaml` `--split` `--imgsz` `--batch` `--device` `--workers` `--max-det` `--conf` `--iou` `--classes` `--exclude-classes` `--conf-sweep/--no-conf-sweep` `--no-iou-analysis` `--limit` `--run-id` `--output-dir` `--no-report` `--log-level` | `runs/detect_eval/<run_id>/{report.json,metrics.csv,conf_sweep.csv,iou_pairs.csv,_dataset_view/}` |
 | `odp-infer` | 图片/视频/目录/摄像头/RTSP 推理 | `--source` `--model` `--yaml` `--pipeline-yaml` `--name` `--conf` `--iou` `--imgsz` `--max-det` `--classes` `--device` `--batch` `--show/--no-show` `--save/--no-save` `--no-viz` `--no-hud` `--warmup` `--log-level` | `runs/detect_infer/<name>/{odp_audit.json,output.mp4|<图片名>.jpg}` |
-| `odp-clean` | 按保留策略清理 `runs/`（默认预演） | `--yes/--apply` `--keep-latest` `--max-age-days` `--protect` `--summary` `--runs-dir` | 无新产物；`--yes` 时写 `apps/platform/logging/clean/` |
+| `odp-clean` | 按保留策略清理 `runs/`（默认预演） | `--yes/--apply` `--yaml` `--keep-latest` `--max-age-days` `--protect` `--summary` `--runs-dir` | 无新产物；`--yes` 时写 `apps/platform/logging/clean/` |
+| `odp-demo` | Gradio 演示界面：上传图片 → 推理 → 标注图 + 检出表 + 汇总（配置与绘制全部复用 `odp-infer`） | `--server-name` `--server-port` `--share` `--inbrowser` `--max-images` `--weight` `--pipeline-yaml` `--conf` `--iou` `--imgsz` `--device` `--no-viz` `--log-level`（需可选依赖 `[ui]`：`pip install -e "./apps/platform[ui]"`） | 无新产物（不写 `runs/`）；日志 `apps/platform/logging/demo/` |
 
 各命令的完整参数表与示例见 **[docs/manual.md](docs/manual.md)**。
+
+## 一切皆配置（零硬编码）
+
+本仓库的硬性纪律：**凡是"改它会让同一份输入得到不同产物"的取值，都必须能从配置改。**
+完整决策与边界见 [ADR-006](docs/architecture/ADR-006-everything-is-config.md)，这里只给结论与用法。
+
+### 配置层清单（**9 套模板 / 13 个模型**）
+
+| 子系统 | 配置模型（默认值的唯一出处） | yaml 模板 | 覆盖途径 |
+|---|---|---|---|
+| 数据流水线 | `runtime_config/transform.py` | `transform.yaml` | `odp-transform --yaml` + CLI（`--train-rate/--val-rate/--seed/--split-strategy`） |
+| 数据质检 | `runtime_config/validate.py` | `validate.yaml` | `odp-validate --yaml` |
+| runs 保留策略 | `runtime_config/clean.py` | `clean.yaml` | `odp-clean --yaml` + CLI（`--keep-latest/--max-age-days/--protect`） |
+| 训练 | `runtime_config/train.py` | `train.yaml` | `odp-train --config` + CLI（`--epochs/--batch/--imgsz/--device`…） |
+| 验证 | `runtime_config/val.py` | `val.yaml` | `odp-gen-config val` 生成后按需引用 |
+| 评估 | `runtime_config/val.py` + `evaluation/settings.py` | `eval.yaml` | `odp-eval --yaml` + CLI（`--conf/--iou/--split/--conf-sweep`…） |
+| 推理 | `runtime_config/infer.py` + `inference/pipeline_config.py` | `infer.yaml` + `infer_pipeline.yaml`（含 `output:` 段） | `odp-infer --yaml/--pipeline-yaml` + CLI |
+| 演示界面 | `runtime_config/demo.py` | `demo.yaml` | `odp-demo` 的 CLI（`--server-port/--weight/--conf/--imgsz`…） |
+
+三套新模板都由 `odp-gen-config` 生成（带中文注释与示例），**不要手写**：
+
+```powershell
+& .\.venv\Scripts\odp-gen-config.exe transform   # 覆盖率闸门 / 稀有类阈值 / 划分比例与种子
+& .\.venv\Scripts\odp-gen-config.exe validate    # 13 个质检阈值
+& .\.venv\Scripts\odp-gen-config.exe clean       # 保留个数 / 最大保留天数 / 豁免清单
+& .\.venv\Scripts\odp-gen-config.exe demo        # 演示界面的服务器与默认阈值
+```
+
+### 三条纪律
+
+1. **优先级固定 `CLI > YAML > DEFAULT`**：CLI 只暴露最常用的开关，深水区交给 yaml；
+2. **默认值只允许存在一处**：每个模型的字段默认值直接引用 `common/constants.py`
+   （如 `coverage_hard_threshold: float = C.COVERAGE_HARD_THRESHOLD`）—— "改一处忘一处"因此可被 grep 验证；
+3. **每个生效值都能查到来源**：启动打印"配置来源报告 + 覆盖链"（`epochs: 100(DEFAULT) → 200(YAML) → 50(CLI)`），
+   生效配置写进 `runs/.../odp_audit.json`，Pydantic 报错也带来源链。
+
+### 明确**不**配置的例外（防止"为了配置而配置"）
+
+- **销毁类操作的白名单 / 保护目录**（`paths.get_dirs_to_reset()` / `PROTECTED_DIRS`）：
+  安全设计不能由用户可写的配置放开 —— 那不是配置化，是把保险丝换成铜丝；
+- **协议与框架常量**：`cv2` 的 `CAP_PROP_*` / FOURCC 语义、`hashlib.sha256` 的选择、
+  契约版本号 `TOOL_VERSION`（它参与指纹配方，改动 = 换契约，必须走代码评审）；
+- **数学边界与容差**：`0/1` 取值范围、浮点比较容差、IoU 分桶边界（这是定义不是偏好）；
+- **哨兵语义**：如 `total<=0` 表示"总量未知"。
+
+判据一句话：**改它会让"同一输入得到不同产物" → 进配置；改它会让"安全承诺或数据契约失效" → 留在代码。**
+
+### 守卫（防回退）
+
+| 守卫 | 位置 | 拦什么 |
+|---|---|---|
+| 硬编码绝对路径守卫 | `.github/workflows/ci.yml` | 盘符/绝对路径进仓库（测试文件豁免） |
+| "模板 == 代码默认值"契约测试 | `apps/platform/tests/runtime_config/**` | 模板与默认值漂移（曾当场抓到 `1e-06` 浮点回环问题） |
+| `extra="forbid"` 拼写防线 | 每个 Settings 模型 | yaml 拼错字段名（`epchs=300` 构造时就报错） |
+| 阈值真生效用例 | `apps/platform/tests/**` | 改了配置不生效 / 生效了破坏默认行为 |
 
 ## 评估指标说明
 
@@ -638,12 +697,27 @@ Get-ChildItem data\raw\demo\images | Select-Object -First 3 Name,Length
 </details>
 
 <details>
-<summary><b>推理视频产物特别大</b></summary>
+<summary><b>推理视频产物特别大 / 想改落盘文件名与编码器</b></summary>
 
-`inference/sinks.py` 的 `LocalFileSink` 目前把文件名 `output.mp4`、编码器 `mp4v`、
-兜底帧率 `30.0` **写死在代码里**（`infer_pipeline.yaml` 里没有 `output` 段）。
-想换 H.264 等编码器目前需要改代码。这一点如实记在
-[ADR-004](docs/architecture/ADR-004-inference-output-and-viz.md) 里。
+落盘参数**不写死在代码里**：`apps/platform/configs/runtime/infer_pipeline.yaml` 的
+`output` 段管 `filename_prefix`、`video_basename` / `video_format` / `video_fourcc`、
+`video_fps` / `video_fps_fallback`、`image_format` / `image_quality`、
+`anonymous_frame_template`、`overwrite_existing`、`keep_audit_json` / `audit_filename`。
+默认值逐字段等于改造前 `LocalFileSink` 写死的那些值（`output.mp4` / `mp4v` / 兜底 `30.0` …），
+所以不配就不会改变产物。
+
+想换 H.264 / Motion-JPEG 只改 yaml（容器与编码器要配对）：
+
+```yaml
+output:
+  video_format: "avi"
+  video_fourcc: "MJPG"
+```
+
+生效值与来源会打进本次推理日志，并写进 `odp_audit.json` 的
+`pipeline.output` / `pipeline.output_sources`；字段表见
+[docs/manual.md](docs/manual.md) 的 `odp-infer` 一节，
+决策记在 [ADR-004](docs/architecture/ADR-004-inference-output-and-viz.md)。
 </details>
 
 <details>

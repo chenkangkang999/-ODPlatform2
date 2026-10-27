@@ -671,7 +671,7 @@ usage: odp-infer [-h] [--source SOURCE] [--model MODEL] [--yaml YAML]
 | `--source` | `None` | 输入源：摄像头号（`0`/`1`）/ 视频文件 / 图片或目录 / RTSP。不传则用 `infer.yaml` |
 | `--model` | `None` | 模型文件名（`best.pt` / `yolo11n.pt`）。不传则用 `infer.yaml` |
 | `--yaml` | `None` | `configs/runtime/infer.yaml` 路径 |
-| `--pipeline-yaml` | `None` | 帧源 + 美化 yaml 路径，默认 `apps/platform/configs/runtime/infer_pipeline.yaml` |
+| `--pipeline-yaml` | `None` | 帧源 + 美化 + 输出落盘 yaml 路径，默认 `apps/platform/configs/runtime/infer_pipeline.yaml` |
 | `--name` | `None` | 输出子目录名（重复自增：`predict` / `predict2` / …） |
 | `--conf` | 按配置（`infer.yaml` 模板里是 `0.25`） | 置信度阈值（0~1） |
 | `--iou` | 按配置（模板 `0.7`） | NMS IoU 阈值（0~1） |
@@ -719,10 +719,50 @@ usage: odp-infer [-h] [--source SOURCE] [--model MODEL] [--yaml YAML]
 
 | 文件 | 说明 |
 |---|---|
-| `odp_audit.json` | 顶层键：`mode` `config` `merger` `pipeline` `stats` `result_summary` |
-| `output.mp4` | 视频 / 摄像头源（文件名与编码器目前写死在 `LocalFileSink`） |
-| `<原图名>.jpg` | 图片源，每帧一张 |
+| `odp_audit.json` | 顶层键：`mode` `config` `merger` `pipeline` `stats` `result_summary`；`pipeline` 里含 `output`（生效值）与 `output_sources`（来源） |
+| `output.mp4` | 视频 / 摄像头源。文件名 / 容器 / 编码器由 `output` 段决定（默认 `output.mp4` + `mp4v`） |
+| `<原图名>.jpg` | 图片源，每帧一张；前缀与扩展名由 `output` 段决定（默认无前缀 + `jpg`） |
 | — | 用 `--no-save` 时不落盘（走 `NullSink`） |
+
+### 输出落盘配置（`infer_pipeline.yaml` 的 `output` 段）
+
+落盘参数**不写死在代码里**（`inference/sinks.py` 只负责消费配置）。
+字段、默认值、原先写死的位置：
+
+| 字段 | 默认值 | 原写死位置 | 说明 |
+|---|---|---|---|
+| `filename_prefix` | `""` | （新增能力） | 产物文件名前缀，空串=不加 |
+| `video_basename` | `"output"` | `sinks.py` `"output.mp4"` | 视频文件名主干（不含扩展名） |
+| `video_format` | `"mp4"` | `sinks.py` `"output.mp4"` | 视频容器：`mp4` / `avi` / `mov` / `mkv` |
+| `image_format` | `"jpg"` | `sinks.py` `f"{stem}.jpg"` | 图片扩展名：`jpg` / `jpeg` / `png` / `bmp` / `webp` / `tif` / `tiff` |
+| `image_quality` | `95` | `cv2.imwrite` 未传参（OpenCV 默认即 95） | JPEG 质量 1–100，**仅 jpg/jpeg 生效** |
+| `anonymous_frame_template` | `"frame_{index:06d}"` | `sinks.py` `f"frame_{frame.info.frame_index:06d}"` | 帧源没给原文件名时的兜底命名，`{index}`=帧序号 |
+| `video_fourcc` | `"mp4v"` | `sinks.py` `VideoWriter_fourcc(*"mp4v")` | 编码器四字符码：`mp4v` / `MJPG` / `XVID` / `avc1` … |
+| `video_fps` | `null`（= `auto` / `source`） | `sinks.py` `float(frame.info.fps)` | `null`=跟随源帧率；数字=固定帧率 |
+| `video_fps_fallback` | `30.0` | `sinks.py` `... else 30.0` | 源帧率缺失或为 0 时的兜底 |
+| `overwrite_existing` | `true` | `cv2.imwrite` / `VideoWriter` 的隐式覆盖 | `false`=同名跳过（日志里会说明跳过了哪个文件） |
+| `keep_audit_json` | `true` | `service.py` 无条件写 | `false`=不写审计快照（日志里说明是按配置跳过） |
+| `audit_filename` | `"odp_audit.json"` | `service.py` `output_dir / "odp_audit.json"` | 审计快照文件名 |
+
+**默认值 = 改造前 `LocalFileSink` 的实际行为**：`output` 段整段删掉、或字段不填，
+产物文件名与字节都与改前完全一致（中文注释/示例见该 yaml 的 `output` 段）。
+改配置后，`infer_pipeline.yaml` 的生效值与来源会以“配置参数信息 / 配置覆盖情况”两张表
+打进本次推理日志（`common/config_log`），并写进 `odp_audit.json` 的 `pipeline.output` /
+`pipeline.output_sources`。
+
+示例（换编码器 + 加前缀 + 不覆盖旧产物）：
+
+```yaml
+output:
+  filename_prefix: "line01_"
+  video_format: "avi"
+  video_fourcc: "MJPG"      # 容器与编码器要配对，否则 VideoWriter 打不开(日志会报 error)
+  image_quality: 80
+  overwrite_existing: false
+```
+
+> 写错类型/取值不会让整次推理失败：`inference/pipeline_config.py` 逐个字段
+> 打 warning 并只让该字段回落默认值（未知字段也会 warning 后忽略）。
 
 日志：`apps/platform/logging/infer/infer_<时间戳>.log`。
 `cli/infer.py` 用的是 `get_logger(base_path=LOGGING_DIR, log_type="infer")`
@@ -740,7 +780,10 @@ usage: odp-infer [-h] [--source SOURCE] [--model MODEL] [--yaml YAML]
 | 触发联网下载 / `Download failure` | `--model` 给的名字不在搜索目录里 | 搜索目录只有 `models/checkpoints/` 与 `models/pretrained/`，且不补 `.pt` 后缀；自训练权重在 `models/trained/`，**必须给全路径** |
 | 服务器上卡住 | `--show` 弹窗 | 加 `--no-show` |
 | 画面没有框 | 用了 `--no-viz` 但美化本身有问题？先分辨：美化默认走 `BeautifyVisualizer.draw()`，`--no-viz` 走原生 `plot()` | 两边都试一次；`infer_pipeline.yaml` 的 `visualization.enabled: false` 等价于关美化 |
-| 输出视频特别大 | `LocalFileSink` 编码器写死 `mp4v` | 目前需改代码（`inference/sinks.py`）；见 [ADR-004](architecture/ADR-004-inference-output-and-viz.md) |
+| 输出视频特别大 | 默认编码器 `mp4v` 压缩率低 | 改 `infer_pipeline.yaml` 的 `output.video_fourcc`（如 `MJPG` / `avc1`，注意与 `video_format` 配对），不必改代码；见 [ADR-004](architecture/ADR-004-inference-output-and-viz.md) |
+| `cv2.VideoWriter 未能打开`（error） | `output.video_fourcc` 与 `output.video_format` 不配对，或本机不支持该编码器 | 按日志里的 fourcc/容器提示改成配对组合（如 `MJPG`+`avi`、`mp4v`+`mp4`），或恢复默认 |
+| `output.xxx 取值无效 (...)，回落默认值`（warning） | `output` 段某个字段类型/取值写错 | 只影响该字段（其余字段照常生效）；按提示改成合法值，或删掉该字段用默认 |
+| `output 段里的未知字段 'xxx' 已忽略`（warning） | 字段名拼错，或用了本版本没有的字段 | 对照手册的 `output` 字段表改名 |
 | `pipeline yaml 不存在, 用默认配置: ...` | 配置文件不在或 `--pipeline-yaml` 指错 | 不是致命错误；确认路径或直接跑默认 |
 | `camera 配置无效, 走默认: ...` | `infer_pipeline.yaml` 的 `frame_source.camera` 字段非法 | `CameraConfig` 是 `extra=forbid`，按提示删掉多余字段 |
 | 中文标签乱码 | `label_mapping` 用了中文，但 cv2 的 Hershey 字体不支持中文 | Hershey 字体不读外部字体文件；需要中文标签要先解决字体渲染，`font_path` 字段目前只是预留 |
@@ -828,6 +871,148 @@ usage: odp-clean [-h] [--yes] [--keep-latest KEEP_LATEST]
 
 ---
 
+## 2.10 `odp-demo` —— Gradio 演示界面
+
+### 用途
+
+把「上传一张图 → 看框、看检出表、看汇总」这条路走通，供答辩 / 演示 / 人工抽查用：
+
+上传图片（单张或多张）→ 逐张推理 → 展示**标注后的结果图**（`BeautifyVisualizer` 画的框 +
+`label_mapping` 后的品种名）→ 展示**检出明细表**（品种 / 置信度 / 框坐标）与**汇总**
+（总检出数、各品种计数）→ 可随时换权重、调 `conf` / `iou` / `imgsz` / `device`、开关美化绘制。
+
+它**不重写任何推理逻辑**，复用关系如下：
+
+| 环节 | 复用的东西 | 与谁同源 |
+|---|---|---|
+| 推理参数默认值 | `runtime_config.build_infer_config()`（D5 三源合并 + Pydantic 校验） | `odp-infer` 读的同一份 `configs/runtime/infer.yaml` |
+| 读图 | `frame_source.create_frame_source()`（D8 帧源） | `odp-infer` 的帧源 |
+| 画框 / 标签 | `visualization.BeautifyVisualizer` + `DrawStyle.from_image_size()`（D7 的交付本体） | `inference/service._FrameProcessor.draw()` 的同一套动作 |
+| 配色 / 标签映射 / 字体 / 美化开关 | `inference.pipeline_config.load_pipeline_config()` | `configs/runtime/infer_pipeline.yaml` 的 `visualization` 段 |
+| 权重名字 → 路径 | `common/refs.py`（`models/trained` → `pretrained` → `checkpoints`） | 全局路径 SSoT 纪律 |
+| 界面旋钮 / 端口 / 张数上限 | `configs/runtime/demo.yaml`（`YOLODemoConfig`，可用 `odp-gen-config demo` 生成） | D5 的三源合并 + 溯源 |
+
+> **为什么没有直接调 `InferService.predict()`？** 它的两个业务接缝都拿不到「每个框的类别 /
+> 置信度 / 坐标」：`sinks.OutputSink.write(frame, annotated)` 只给画好的图；
+> `hooks.InferHooks` 的 `FrameEvent.detections` 在 `inference/pipeline.py` 里写死为 `None`。
+> 走 service 只能拿「标注图 + 每类计数」，拿不到本命令要求的**检出表**；而且 service 每次调用
+> 都会在 `runs/<task>_infer/<name>/` 下新建输出目录（名字默认还自增：`predict` / `predict2` / …）
+> —— 对一个"点一下就推一次"的界面来说，那是每点一次留一份运行现场。所以这里保留**同一套配置与
+> 绘制**，只把最外层驱动换成单张图直调（`model([BGR 图], **predict_kwargs)` →
+> `BeautifyVisualizer.draw()`，`predict_kwargs` 的取法与 `InferService.predict()` 逐行同构）。
+> 结果与 `odp-infer --source <同一张图> --model <同名权重>` 等价，且**不产 `runs/` 现场**。
+
+### 安装（可选依赖）
+
+`gradio` 是**可选依赖组 `ui`**，引擎本体（`odp-infer` / `odp-train` / …）不需要它：
+
+```powershell
+# 在仓库根执行
+& .\.venv\Scripts\python.exe -m pip install -e "./apps/platform[ui]"
+# 国内源
+& .\.venv\Scripts\python.exe -m pip install -e "./apps/platform[ui]" -i https://mirrors.aliyun.com/pypi/simple/
+```
+
+CI 不装 gradio 也能跑 pytest：`visualization/gradio_app.py` **顶层不 import gradio**
+（`main()` 里才延迟 import），纯函数（检出明细 → 表格行 / 汇总、权重按名解析、配置三源合并）
+在没有 gradio 的环境里照常可测；未安装 gradio 时 `main()` 打印中文指引并以退出码 `2` 结束。
+
+### 参数
+
+```
+usage: odp-demo [-h] [--server-name SERVER_NAME] [--server-port SERVER_PORT]
+                [--share] [--inbrowser] [--max-images MAX_IMAGES]
+                [--weight WEIGHT] [--pipeline-yaml PIPELINE_YAML]
+                [--conf CONF] [--iou IOU] [--imgsz IMGSZ] [--device DEVICE]
+                [--no-viz] [--log-level {DEBUG,INFO,WARNING,ERROR}]
+```
+
+| 参数 | 默认 | 说明 |
+|---|---|---|
+| `--server-name` | 按 `demo.yaml` 的 `server_name`（模板 `127.0.0.1`） | 界面绑定地址（`0.0.0.0` = 局域网可访问） |
+| `--server-port` | 按 `demo.yaml` 的 `server_port`（模板 `7860`） | 界面端口 |
+| `--share` | 按 `demo.yaml` 的 `share`（模板 `false`） | 生成 gradio 公网分享链接（经第三方服务，慎用） |
+| `--inbrowser` | 按 `demo.yaml` 的 `inbrowser`（模板 `false`） | 启动后自动打开浏览器 |
+| `--max-images` | 按 `demo.yaml` 的 `max_images`（模板 `8`） | 单次最多处理几张图（超出截断并在结果区提示） |
+| `--weight` | 按 `demo.yaml` 的 `weight`（模板 `train-20261027-124755-fish-yolo11n-best`） | 权重**名字**（可带/不带 `.pt`），由 `common/refs.py` 解析；界面下拉里可换 |
+| `--pipeline-yaml` | 按 `demo.yaml` 的 `pipeline_yaml`（模板 `null` = 与 `odp-infer` 同一个落点） | 美化 / 帧源 yaml |
+| `--conf` | 按 `infer.yaml` 的 `conf`（模板 `0.25`） | 置信度阈值 |
+| `--iou` | 按 `infer.yaml` 的 `iou`（模板 `0.7`） | NMS IoU 阈值 |
+| `--imgsz` | 按 `infer.yaml` 的 `imgsz`（模板 `640`） | 推理输入尺寸 |
+| `--device` | 按 `infer.yaml` 的 `device`（模板 `null` = 自动） | `cpu` / `0` / `0,1` / `mps`；界面上的 `auto` 等价于 `null` |
+| `--no-viz` | 关（**不覆盖配置**） | 关掉美化绘制，退回 YOLO 原生 `plot()`；要不要美化默认由 `infer_pipeline.yaml` 的 `visualization.enabled` 说了算 |
+| `--log-level` | `INFO` | `DEBUG` / `INFO` / `WARNING` / `ERROR` |
+
+命令行参数与其他命令同一纪律：**只把非 `None` 的值当"CLI 源"**交给配置合并
+（`CLI > YAML > DEFAULT`）；`--log-level` / `--no-viz` 是 CLI 自己的行为开关、不进配置。
+
+#### 默认值的唯一来源（界面代码里没有硬编码的默认值）
+
+| 界面可调项 | 默认值的唯一来源 |
+|---|---|
+| `conf` / `iou` / `imgsz` / `device` | `configs/runtime/infer.yaml` —— 经 D5 `build_infer_config()` 三源合并；界面把控件值当"CLI 源"传进去 |
+| `max_det` / `batch` / `classes` / `augment` / `agnostic_nms` / `retina_masks` | 同上（界面**不暴露**这些项，由配置生效，与 `odp-infer` 一致） |
+| 标题 / 绑定地址 / 端口 / `share` / `inbrowser` / 单次张数上限 / 默认权重名 / 美化 yaml 路径 | `configs/runtime/demo.yaml` ← `runtime_config/demo.py` 的 `YOLODemoConfig` 的 `Field(default=...)`（可用 `odp-gen-config demo` 重新生成） |
+| 配色 / 标签映射 / 字体 / 美化开关 | `configs/runtime/infer_pipeline.yaml` 的 `visualization` 段（界面不另写一套配色） |
+| 权重文件路径 | 名字 → `models/trained` → `models/pretrained` → `models/checkpoints`（`common/refs.py` 按名解析，源码里不出现盘符 / 绝对路径） |
+| 权重下拉候选 | 动态扫描上面三个目录的 `*.pt`（不写死清单） |
+| 滑块 `min` / `max` | `YOLOInferConfig` 字段的 Pydantic 约束（`ge` / `le`）反射而来（步长 = 区间 / 100，纯界面刻度） |
+| 日志落点 | `common/logging_utils.get_logger(base_path=paths.LOGGING_DIR, log_type="demo")` |
+
+界面上「配置来源」折叠面板会把上面这张表按**生效值 + 来源（`YAML` / `DEFAULT`）**实时列出来 ——
+来源取自 D5 合并器记下的溯源链，不是猜的。
+
+> `infer_pipeline.yaml` 的 `output` 段（落盘文件名 / 编码器 / 审计快照）对 `odp-demo`
+> **不生效**：这个界面只在浏览器里出结果，不落盘。
+
+### 示例
+
+```powershell
+# 用 demo.yaml 的默认值起界面（默认权重 = 已训好的 fish 权重）
+& .\.venv\Scripts\odp-demo.exe
+
+# 换端口 / 换权重 / 指定设备
+& .\.venv\Scripts\odp-demo.exe --server-port 7999 --weight train-20261027-121740-synth-yolo11n-best --device 0
+
+# 临时改这次界面的推理参数默认值（界面上还能再拖）
+& .\.venv\Scripts\odp-demo.exe --conf 0.4 --imgsz 512
+
+# 对比一下"美化绘制"与 YOLO 原生绘制
+& .\.venv\Scripts\odp-demo.exe --no-viz
+
+# 重新生成界面配置模板（覆盖前自动备份）
+& .\.venv\Scripts\odp-gen-config.exe demo --overwrite
+```
+
+### 产物
+
+- **不产 `runs/` 现场**：结果只回到浏览器（图片 + 表格 + 汇总），不落盘、不写审计快照。
+- 日志：`apps/platform/logging/demo/demo_<时间戳>.log`（走 `paths.LOGGING_DIR`，绝对路径，
+  不随工作目录漂移）。启动时会把生效的界面配置（`to_audit_snapshot()`）与推理参数写进日志，
+  便于复盘「这次界面是什么配置起的」。
+- 权重、配置、数据一律只读；演示过程不修改它们。
+
+### 失败模式与排查
+
+| 现象 | 原因 | 处理 |
+|---|---|---|
+| `odp-demo 需要可选依赖 gradio…`（退出码 2） | 没装 `[ui]` 可选依赖 | `pip install -e "./apps/platform[ui]"` |
+| `配置准备失败：…`（退出码 2） | `demo.yaml` 缺失，或字段名写错（`extra="forbid"` 会当场报错） | `odp-gen-config demo` 生成模板；字段名照模板 |
+| `找不到权重文件：…`（结果区红字） | `--weight` / `demo.yaml` 的名字在三个搜索目录里都没有 | 用界面下拉里的候选名；或先 `odp-train` 训一个 |
+| `界面启动失败：…`（退出码 1） | 端口被占用 | 换 `--server-port` |
+| 结果区 `处理失败 / 读取图片失败` | 上传的不是受支持格式或文件损坏 | 换 `jpg/png/bmp/webp` |
+| 只处理了前 N 张 | 触到 `max_images` 上限 | 改 `demo.yaml` 的 `max_images` 或分批上传 |
+| 标注图上没有框 | `infer_pipeline.yaml` 的 `visualization.enabled` 被改成了 `false`，或界面取消勾选了「美化绘制」 | 检查该配置项；勾回「美化绘制」 |
+| 中文标签乱码 | 与 `odp-infer` 同一条：cv2 的 Hershey 字体不支持中文，且 `label_mapping` 只映射 COCO 名（fish 的 33 个品种名不在其中，所以默认显示英文品种名） | 品种名保持英文；要中文标签需先解决字体渲染（`font_path` 目前只是预留） |
+| `pipeline yaml 不存在, 用默认配置: …` | 配置不在或 `--pipeline-yaml` 指错 | 非致命；确认路径或直接跑默认 |
+
+### 退出码
+
+`0` 正常（界面被 Ctrl+C 结束后返回）/ `1` 界面启动失败（端口占用等）/
+`2` 未安装 gradio、配置缺失或非法、参数用法错误。
+
+---
+
 ## 三、产物与追溯一览
 
 ```
@@ -842,8 +1027,8 @@ runs/
 │   ├── report.json / metrics.csv / conf_sweep.csv / iou_pairs.csv
 │   └── _dataset_view/{data.yaml,images/,labels/}
 ├── detect_infer/<name>/                              # 推理现场
-│   ├── odp_audit.json
-│   └── output.mp4 | <图片名>.jpg
+│   ├── odp_audit.json                                # 名字/开关可配(output 段)
+│   └── output.mp4 | <图片名>.jpg                      # 名字/格式/编码器可配(output 段)
 ├── lineage/<data_fingerprint>/                       # ★ 数据流转卡（odp-clean 永不动）
 │   ├── transform.stamp.json     (odp-transform 盖)
 │   ├── validate.stamp.json      (odp-validate 盖)
@@ -891,3 +1076,58 @@ runs/
 - [ ] `odp-eval` 报告里看过 `warnings` 再引用指标数字
 - [ ] 跑 `odp-clean` 之前先不加 `--yes` 看预演，**确认 `lineage` 标着 `[豁免]`**
 - [ ] 跑 `odp-reset` 之前先不加 `--yes` 看计划，**确认 `data/raw/` 不在其中**
+
+---
+
+## 六、一切皆配置（配置层速查）
+
+本仓库的硬性纪律：**凡是"改它会让同一份输入得到不同产物"的取值，都必须能从配置改。**
+完整决策与边界见 [ADR-006](architecture/ADR-006-everything-is-config.md)。
+
+### 6.1 九套模板与它们的命令
+
+| yaml 模板（`apps/platform/configs/runtime/`） | 谁读它 | 怎么覆盖 | 怎么重新生成 |
+|---|---|---|---|
+| `transform.yaml` | `odp-transform` | `odp-transform --yaml <名/路径>` + `--train-rate/--val-rate/--seed/--split-strategy` | `odp-gen-config transform` |
+| `validate.yaml` | `odp-validate` | `odp-validate --yaml <名/路径>` | `odp-gen-config validate` |
+| `clean.yaml` | `odp-clean` | `odp-clean --yaml <名/路径>` + `--keep-latest/--max-age-days/--protect` | `odp-gen-config clean` |
+| `train.yaml` | `odp-train` | `odp-train --config <路径>` + `--epochs/--batch/--imgsz/--device`… | `odp-gen-config train` |
+| `val.yaml` | 验证流程 | `odp-gen-config val` 生成后按需引用 | `odp-gen-config val` |
+| `eval.yaml` | `odp-eval` | `odp-eval --yaml <名/路径>` + `--conf/--iou/--split/--conf-sweep`… | （随仓库提供） |
+| `infer.yaml` | `odp-infer` | `odp-infer --yaml <名/路径>` + CLI | `odp-gen-config infer` |
+| `infer_pipeline.yaml` | `odp-infer`（帧源 + 美化 + **输出落盘**） | `odp-infer --pipeline-yaml <名/路径>` | （随仓库提供） |
+| `demo.yaml` | `odp-demo` | `odp-demo` 的 CLI | `odp-gen-config demo` |
+
+### 6.2 改一个阈值该改哪里（三条纪律）
+
+1. **优先级 `CLI > YAML > DEFAULT`**：临时试一下用 CLI，长期生效改 yaml，**不要改源码**；
+2. **默认值只有一处**：每个 `runtime_config/<子系统>.py` 的字段默认值直接引用
+   `common/constants.py`（例：`coverage_hard_threshold: float = C.COVERAGE_HARD_THRESHOLD`）。
+   想确认某个阈值的"出厂值"，grep 那个常量即可；
+3. **改完要知道谁生效**：启动日志里有"配置来源报告"与"覆盖链"
+   （`epochs : 100(DEFAULT) → 200(YAML) → 50(CLI)`）；本次运行的生效配置与来源也写进
+   `runs/.../odp_audit.json`。
+
+### 6.3 两个常用实验（验证"配置真的生效"）
+
+```powershell
+# ① 把覆盖率硬闸门提到 0.99 → 同一份数据必须被拒（退出码 1）
+#    编辑 apps/platform/configs/runtime/transform.yaml 的 coverage_hard_threshold: 0.99
+& .\.venv\Scripts\odp-transform.exe --dataset demo --format pascal_voc --split-strategy stratified_multilabel
+#    期望：日志出现"覆盖率 ... 低于硬阈值"，退出码 1
+
+# ② 把出界框判 ERROR 的门限调低 → 同一个越界框的严重度升级
+#    编辑 validate.yaml 的 bbox_out_error_ratio: 0.0
+& .\.venv\Scripts\odp-validate.exe apps\platform\configs\datasets\demo.yaml
+#    期望：bbox_within_image 由 WARNING 变 ERROR，退出码由 1 变 2
+```
+
+### 6.4 明确**不**配置的东西（看到它们别奇怪）
+
+- 销毁类操作的白名单 / 保护目录（`paths.get_dirs_to_reset()` / `PROTECTED_DIRS`）——
+  安全设计不能由用户可写的配置放开；
+- 协议与框架常量：`cv2` 的 `CAP_PROP_*` / FOURCC 语义、`hashlib.sha256`、契约版本号 `TOOL_VERSION`；
+- 数学边界与容差：`0/1` 取值范围、浮点比较容差、IoU 分桶边界；
+- 哨兵语义：如 `total<=0` 表示"总量未知"。
+
+判据：**改它会让"同一输入得到不同产物" → 进配置；改它会让"安全承诺或数据契约失效" → 留在代码。**
