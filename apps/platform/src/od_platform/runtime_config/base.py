@@ -476,6 +476,10 @@ class BaseConfig(SettingsBase):
                 raise ValueError("batch 为 int 时必须为 -1(自动) 或 >= 1(固定值)")
             return v
         v_float = float(v)
+        # CLI type=float 会把 "8" 解析成 8.0, 这里把"整数型 float"还原成 int,
+        # 否则会被下面的 (0,1] 显存占比校验误拒. 真正的显存占比 0.7 保持 float.
+        if v_float.is_integer() and v_float > 1.0:
+            return int(v_float)
         if not (0.0 < v_float <= 1.0):
             raise ValueError(
                 f"batch 为 float 时必须在 (0, 1] 范围内, 表示显存利用率. "
