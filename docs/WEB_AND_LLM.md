@@ -76,7 +76,7 @@ powershell -ExecutionPolicy Bypass -File scripts/start_fish_web.ps1 -SkipBuild
 
 ### 本机已完成的接入
 
-用户提供的 `fish.zip` 已按平台原有转换、分层划分和质检流程接入：训练 3652、验证 458、测试 450，共 4560 张图片、6034 个框，15 项质检全部 PASS。数据契约指纹与仓库一致，数据指纹为 `1dc1c08a…`。本轮没有重新训练模型。
+用户提供的 `fish.zip` 已按平台原有转换、分层划分和质检流程接入：训练 3652、验证 458、测试 450，共 4560 张图片、6034 个框，15 项质检全部 PASS（新增 `image_integrity` 后重跑为 16 项）。数据契约指纹与仓库一致，数据指纹为 `1dc1c08a…`。本轮没有重新训练模型。
 
 为保留同学的共享配置，Web 使用本机忽略目录中的 `runs/web/dataset/fish.yaml`；只有 `integration.json` 的接入标记成功、对应配置存在时才优先使用。训练工作进程也传入这个配置，继续执行平台原有的身份检查。原 `apps/platform/configs/datasets/fish.yaml` 未改动。下载源码到新机器仍需准备自己的本地数据。
 

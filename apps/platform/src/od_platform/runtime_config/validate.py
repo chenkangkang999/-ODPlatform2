@@ -8,8 +8,9 @@
 
 对应 ``configs/runtime/validate.yaml`` (odp-gen-config validate 生成)。
 
-★ 覆盖哪些阈值(逐个核对过 15 个 check 的真实 import, 不多不少):
+★ 覆盖哪些阈值(逐个核对过 16 个 check 的真实 import, 不多不少):
     pair_existence       → pair_missing_error_ratio / pair_missing_warn_ratio / pair_max_detail
+    image_integrity      → image_integrity_error_ratio / details_preview_limit
     bbox_within_image    → bbox_out_error_ratio / bbox_edge_tolerance / details_preview_limit
     box_geometry         → degenerate_box_min_size / stats_max_aspect_ratio / details_preview_limit
     annotation_coverage  → unlabeled_warn_ratio / unlabeled_info_ratio
@@ -299,11 +300,31 @@ class ValidateSettings(SettingsBase):
             "examples": [5, 20, 50],
             "tips": [
                 "label_format / bbox_within_image / box_geometry / duplicate_annotations /"
-                " orphan_labels / split_uniqueness / stem_collision 共用",
+                " orphan_labels / split_uniqueness / stem_collision / image_integrity 共用",
                 "统一一个数字, 免得每份 report 预览长度都不一样",
                 "只影响报告体积, 不影响判定",
             ],
             "yaml_comment": "details 预览统一上限(条)",
+        },
+    )
+
+    # ============================================================
+    # 图像完整性
+    # ============================================================
+
+    image_integrity_error_ratio: float = Field(
+        default=C.IMAGE_INTEGRITY_ERROR_RATIO,
+        ge=0.0, le=1.0,
+        description="坏图占比的 ERROR 线",
+        json_schema_extra={
+            "group":    "图像完整性",
+            "examples": [0.0, 0.01, 0.05],
+            "tips": [
+                "无法解码的图(0 字节 / 截断 / 伪装扩展名)占比 >= 此值 → ERROR",
+                "默认 0.0: 一张坏图就算 ERROR —— 坏图会让训练 dataloader 直接崩",
+                "调高 = 更宽容: 少量坏图降级为 WARNING",
+            ],
+            "yaml_comment": "坏图占比 ERROR 线",
         },
     )
 

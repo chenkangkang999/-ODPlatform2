@@ -22,7 +22,7 @@
 | 类别（`names` 顺序即 `class_id`） | `Batashi, Bele, Chanda, Chapila, Chela, Foli, Ilish, Kajuli, Kayakanta, Koi, Magur, Mola, Mrigel, Pabda, Pangas, Puti, Rui, Rupchada, Shol, Sorputi, Taki, Tarabaim, Telapia, Tengra, Veda, Vetki, ayer, boyal, chitol, kalbaus, katol, kholshe, shing` |
 | 划分（`stratified_multilabel`，seed 42，一次性冻结） | train **3652** / val **458** / test **450** |
 | 契约指纹 | `e0272ec1daf7d634455dc5f453428f4791913cad6e0da5916e6415279b638727` |
-| `odp-validate` 结果 | **15/15 项 PASS，总评 PASS**（`data_fingerprint=1dc1c08a…`） |
+| `odp-validate` 结果 | **15/15 项 PASS，总评 PASS**（`data_fingerprint=1dc1c08a…`；新增 `image_integrity` 后重跑应为 16/16） |
 
 > 说明：原始 Roboflow 导出自带 `train/valid/test` 三份划分，但本平台**不沿用**它 ——
 > 划分在 `odp-transform` 这一步用固定种子一次性产出、落盘并写进划分契约（D0 决定 5：
@@ -71,7 +71,7 @@
 |---|---|
 | `common/` | 路径/日志/字符串/系统/性能/常量/血缘指纹/引用解析/注册表工具/运行上下文/命名/盖章/进度/保留策略/日志改名/模型路径/配置日志/配置工具 |
 | `data_pipeline/` | `odp-transform`：转换（pascal_voc / coco / yolo）→ 扫描报告 → 划分 → 契约指纹 → 物化 → 写 yaml |
-| `data_validation/` | `odp-validate`：15 项只读 check，按最严聚合成退出码 |
+| `data_validation/` | `odp-validate`：16 项只读 check，按最严聚合成退出码 |
 | `runtime_config/` | Pydantic v2 配置模型 + 三源合并（DEFAULT / YAML / CLI）+ YAML 模板生成 |
 | `training/` | `odp-train`：身份核验 → 训练 → 指标 → 盖章 → 审计 → 归档 |
 | `inference/` | `odp-infer`：帧源 → 逐帧预测 → 美化/HUD → 输出 sink → 审计 |
@@ -152,7 +152,7 @@ $PY = ".\.venv\Scripts\python.exe"
 $names = "Batashi Bele Chanda Chapila Chela Foli Ilish Kajuli Kayakanta Koi Magur Mola Mrigel Pabda Pangas Puti Rui Rupchada Shol Sorputi Taki Tarabaim Telapia Tengra Veda Vetki ayer boyal chitol kalbaus katol kholshe shing".Split(" ")
 & .\.venv\Scripts\odp-transform.exe --dataset fish --format yolo --split-strategy stratified_multilabel --classes @names
 
-# ③ 质检（应得 15/15 PASS，并盖 D4 章）
+# ③ 质检（应得 16/16 PASS，并盖 D4 章）
 & .\.venv\Scripts\odp-validate.exe apps\platform\configs\datasets\fish.yaml
 
 # ④ 生成运行配置模板（train/val/infer/eval）
@@ -225,7 +225,7 @@ data/raw/<name>/labels/            # YOLO 的 *.txt（注意是 labels/ 不是 a
 ⚠️ **相对路径的坑**：位置参数 `yaml_path` 是**相对当前工作目录**解析的。
 `--help` 里写的示例是 `configs/datasets/demo.yaml`（那是相对 `apps/platform/` 的写法）。
 在仓库根运行时必须写 `apps\platform\configs\datasets\<name>.yaml`；写错不会报"文件不存在"，
-而是 15 项 check 全部报 `yaml 无法加载` 并以退出码 2 结束。
+而是 16 项 check 全部报 `yaml 无法加载` 并以退出码 2 结束。
 
 产物 / 落点：
 
@@ -337,7 +337,7 @@ data/raw/<name>/labels/            # YOLO 的 *.txt（注意是 labels/ 不是 a
 | `odp-init` | 建 15 项运行时目录 + 打印环境概览与数据目录状态 | **无参数** | 目录本体；`apps/platform/logging/init_project/*.log` |
 | `odp-reset` | 撤销 init 的运行时产物（默认 dry-run） | `--yes` `--force` `--dry-run` | 清理 `data/processed/`、`runs/`、`models/trained/`、`apps/platform/logging/`；审计日志 `.odp-meta/logs/reset_project/` |
 | `odp-transform` | 原始标注 → 划分 → 物化 → 数据集 yaml | `--dataset` `--format` `--task` `--yaml` `--train-rate` `--val-rate` `--seed` `--split-strategy` `--classes` | `data/processed/<name>/`、`configs/datasets/<name>.yaml`、`runs/data_pipeline/<run_id>/manifest.json`、`runs/lineage/<fp>/transform.stamp.json` |
-| `odp-validate` | 15 项只读质检 + 与上次报告的历史对比，按最严聚合退出码 | `<yaml_path>`（位置） `--yaml`（阈值配置） `--task` `--run-id` `--no-report` | `runs/data_validation/<run_id>/{report.json,results.csv,compare.json}`、`runs/lineage/<fp>/validate.stamp.json` |
+| `odp-validate` | 16 项只读质检 + 与上次报告的历史对比，按最严聚合退出码 | `<yaml_path>`（位置） `--yaml`（阈值配置） `--task` `--run-id` `--no-report` | `runs/data_validation/<run_id>/{report.json,results.csv,compare.json}`、`runs/lineage/<fp>/validate.stamp.json` |
 | `odp-gen-config` | 从 Pydantic 模型反射生成 YAML 模板（**默认值唯一出处**） | `{train,val,infer,demo,transform,validate,clean}`（位置） `-o/--output` `--overwrite` `--no-backup` | `apps/platform/configs/runtime/<name>.yaml`（+ 覆盖时 `<name>.yaml.bak.<时间戳>`） |
 | `odp-train` | 身份核验 → 训练 → 盖章 → 审计 → 归档 | `--config` `--data` `--model` `--epochs` `--batch` `--imgsz` `--device` `--experiment-name` `--no-archive` `--skip-validate` | `runs/training/<run_id>/`、`models/trained/<stem>-best.pt`、`runs/lineage/<fp>/train.stamp.json` |
 | `odp-eval` | 独立评估已训好模型 + IoU 匹配分析 + 置信度扫描 | `--weights` `--data`（必填）`--yaml` `--split` `--imgsz` `--batch` `--device` `--workers` `--max-det` `--conf` `--iou` `--classes` `--exclude-classes` `--conf-sweep/--no-conf-sweep` `--no-iou-analysis` `--limit` `--run-id` `--output-dir` `--no-report` `--log-level` | `runs/detect_eval/<run_id>/{report.json,metrics.csv,conf_sweep.csv,iou_pairs.csv,_dataset_view/}` |
@@ -647,6 +647,10 @@ Get-ChildItem data\raw\demo\images | Select-Object -First 3 Name,Length
 ```
 
 **它不能用来训练**：ultralytics 解不了空图，会直接报损坏图像。
+
+`odp-validate` 的 `image_integrity` check 也会如实地把这些 0 字节图判成
+**ERROR（无法解码）** —— 这是预期行为，不是回归；要看"质检全绿"，请用
+`synth`（真实可解码的合成 JPEG）或业务数据集。
 </details>
 
 <details>

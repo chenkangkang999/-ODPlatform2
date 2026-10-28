@@ -1,6 +1,8 @@
 # apps/platform/tests/test_data_validation.py
-"""data_validation 回归测试:干净集 + 九类脏集,守住 15 项 check 的关键语义。"""
+"""data_validation 回归测试:干净集 + 十类脏集,守住 16 项 check 的关键语义。"""
 from pathlib import Path
+
+import pytest
 
 from od_platform.data_validation.registry import CheckContext, CheckSeverity, get_check
 from od_platform.data_validation.service import run_all_checks, validate_dataset
@@ -16,10 +18,24 @@ def _run(yaml_path: Path, name: str):
 
 
 def test_clean_dataset_all_pass(demo_yaml):
-    """干净集:除 D3 故意埋的 c_050 越界框(bbox_within_image WARNING)外,全部 PASS/INFO。"""
+    """干净集:除两处已知问题外,全部 PASS/INFO。
+
+    - ``bbox_within_image``:D3 故意埋的 c_050 越界框,留给 D4 抓 → WARNING;
+    - ``image_integrity``:demo 的图是 0 字节占位(``scripts/demo_data/make_demo.py``
+      写 ``b""``,只演示目录/标注链路) → 全部无法解码,按设计报 ERROR。
+      真实数据(synth / fish)的图可解码,不会触发这一档。
+    """
     for r in run_all_checks(_ctx(demo_yaml)):
         if r.name == "bbox_within_image":
             assert r.severity == CheckSeverity.WARNING, r  # c_050 埋雷,留给 D4 抓
+        elif r.name == "image_integrity":
+            # demo 的图是 0 字节占位 → 全部无法解码,必然是 ERROR;
+            # 若哪天 demo 换成真实图像,这里应回到 PASS。
+            if r.details.get("n_corrupt"):
+                assert r.severity == CheckSeverity.ERROR, r
+                assert r.details["n_corrupt"] == r.details["total_images"], r
+            else:
+                assert r.severity in (CheckSeverity.PASS, CheckSeverity.INFO), r
         else:
             assert r.severity in (CheckSeverity.PASS, CheckSeverity.INFO), \
                 f"{r.name}: {r.severity} {r.summary}"
@@ -81,3 +97,21 @@ def test_box_geometry_one_kind_per_line(demo_yaml_degenerate_and_extreme):
     assert r.severity == CheckSeverity.WARNING
     assert r.details["issue_kinds"].get("extreme_aspect_ratio", 0) == 0
     assert sum(r.details["issue_kinds"].values()) >= 1
+
+
+def test_image_integrity_passes_on_decodable_images(demo_yaml_decodable):
+    """可解码数据集必须 PASS(证明 check 不会把正常图误判成坏图)。"""
+    pytest.importorskip("PIL.Image")
+    r = _run(demo_yaml_decodable, "image_integrity")
+    assert r.severity == CheckSeverity.PASS, r.summary
+    assert r.details["n_corrupt"] == 0
+
+
+def test_image_integrity_flags_corrupt_image(demo_yaml_one_corrupt_image):
+    """可解码集合里混入 1 张非图像字节:默认阈值 0.0 → ERROR,且只报这 1 张。"""
+    pytest.importorskip("PIL.Image")
+    r = _run(demo_yaml_one_corrupt_image, "image_integrity")
+    assert r.severity == CheckSeverity.ERROR
+    assert r.details["n_corrupt"] == 1
+    assert 0 < r.details["corrupt_ratio"] < 1
+    assert r.details["corrupt_preview"][0]["image"].endswith(".jpg")

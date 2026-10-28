@@ -261,7 +261,7 @@ usage: odp-transform [-h] --dataset DATASET --format {pascal_voc,coco,yolo}
 
 ### 用途
 
-对数据集做 **15 项只读 check**，把结果按"最严"聚合成总评与退出码。
+对数据集做 **16 项只读 check**，把结果按"最严"聚合成总评与退出码。
 它**不改任何数据**；只写报告与章。
 
 ```
@@ -290,11 +290,11 @@ usage: odp-validate [-h] [--task {detect,segment}] [--run-id RUN_ID]
 ```
 
 > `--help` 里的示例写的是 `configs/datasets/demo.yaml` —— 那是**相对 `apps/platform/`** 的写法。
-> 在仓库根按原样敲不会报"文件不存在"，而是 15 项里 `yaml_schema` 报
+> 在仓库根按原样敲不会报"文件不存在"，而是 16 项里 `yaml_schema` 报
 > `yaml 无法加载`、`fingerprint_match` / `manifest_lineage` 报 `yaml 缺少 odp_meta.manifest_path`，
 > 总评 ERROR、退出码 2。这是最容易踩的一个坑。
 
-### 15 项 check 与严重度
+### 16 项 check 与严重度
 
 严重度四级：`ERROR`（必须修）> `WARNING`（可训但建议修）> `INFO`（提示）> `PASS`（通过）。
 `get_all_checks()` 按名字排序返回：
@@ -308,17 +308,19 @@ usage: odp-validate [-h] [--task {detect,segment}] [--run-id RUN_ID]
 | 5 | `class_presence` | 每个类是否在各 split 都出现 |
 | 6 | `duplicate_annotations` | 完全重复的标注行 |
 | 7 | `fingerprint_match` | manifest 自洽 + yaml 指纹三方一致 |
-| 8 | `label_format` | 标签行结构与取值范围 |
-| 9 | `manifest_lineage` | 逐样本核验：在契约说的 split 里、内容 sha256 未变 |
-| 10 | `orphan_labels` | 孤儿标签（有标签没图） |
-| 11 | `pair_existence` | 图像与标签配对 |
-| 12 | `split_presence` | 各 split 是否存在（train 缺失即 ERROR） |
-| 13 | `split_uniqueness` | 同一图是否跨 split（泄漏） |
-| 14 | `stem_collision` | 同名多扩展名冲突 |
-| 15 | `yaml_schema` | yaml 能否加载、结构是否合法 |
+| 8 | `image_integrity` | 图像能否真正解码（0 字节 / 截断 / 伪装扩展名） |
+| 9 | `label_format` | 标签行结构与取值范围 |
+| 10 | `manifest_lineage` | 逐样本核验：在契约说的 split 里、内容 sha256 未变 |
+| 11 | `orphan_labels` | 孤儿标签（有标签没图） |
+| 12 | `pair_existence` | 图像与标签配对 |
+| 13 | `split_presence` | 各 split 是否存在（train 缺失即 ERROR） |
+| 14 | `split_uniqueness` | 同一图是否跨 split（泄漏） |
+| 15 | `stem_collision` | 同名多扩展名冲突 |
+| 16 | `yaml_schema` | yaml 能否加载、结构是否合法 |
 
 参考实现里的阈值全部集中在 `common/constants.py`（`PAIR_MISSING_ERROR_RATIO`、
-`BBOX_OUT_ERROR_RATIO`、`SPLIT_MIN_IMAGES`、`ORPHAN_LABELS_WARN_RATIO` …），check 里不写魔法数。
+`BBOX_OUT_ERROR_RATIO`、`IMAGE_INTEGRITY_ERROR_RATIO`、`SPLIT_MIN_IMAGES`、
+`ORPHAN_LABELS_WARN_RATIO` …），check 里不写魔法数。
 
 ### 产物
 
@@ -367,7 +369,7 @@ usage: odp-validate [-h] [--task {detect,segment}] [--run-id RUN_ID]
 
 | 现象 | 原因 | 处理 |
 |---|---|---|
-| 15 项全 `yaml 无法加载`，退出码 2 | yaml 路径相对仓库根写错（少写了 `apps\platform\`） | 用完整相对路径或绝对路径 |
+| 16 项全 `yaml 无法加载`，退出码 2 | yaml 路径相对仓库根写错（少写了 `apps\platform\`） | 用完整相对路径或绝对路径 |
 | 日志里 `没有同数据集的历史质检报告, 本次为首次质检(无历史可比)` | 这是第一次质检这份 yaml（或换了路径） | 不是错误；`compare.json` 里 `has_history` 为假 |
 | `日志里 历史对比失败, 跳过: ...` | 历史报告损坏/不可读 | 对比失败**不影响质检结论**（护栏吞掉异常），报告照常产出 |
 | `fingerprint_match: yaml 缺少 odp_meta.manifest_path` | 这份 yaml 不是 `odp-transform` 产出 | 跑 `odp-transform` 生成合格证；外部 yaml 无法对账是设计使然 |
@@ -1054,7 +1056,7 @@ runs/
 |---|---|---|
 | 控制台中文/符号乱码 | 代码页不是 UTF-8 | `chcp 65001`；或设 `$env:PYTHONIOENCODING='utf-8'` |
 | `CUDA可用: False` / 推理训练很慢 | torch 装成了 `+cpu` 构建 | 按 1.1 换 cu126 构建（注意驱动版本上限：cu126 要求驱动 ≥ 560） |
-| `odp-validate` 15 项全 `yaml 无法加载` | yaml 路径少了 `apps\platform\` 前缀 | 用完整相对路径或绝对路径 |
+| `odp-validate` 16 项全 `yaml 无法加载` | yaml 路径少了 `apps\platform\` 前缀 | 用完整相对路径或绝对路径 |
 | `Download failure ...` / 模型下载失败 | `--model` 的名字本地找不到，转去联网 | 给全路径，或把权重放进 `models/pretrained/` |
 | `odp-transform` 报缺标注目录 | yolo 格式用了 `annotations/` | 必须是 `labels/` |
 | `odp-transform` 报覆盖率过低 | 导出中断 / 路径配错 | 修源头，不要带病训练 |

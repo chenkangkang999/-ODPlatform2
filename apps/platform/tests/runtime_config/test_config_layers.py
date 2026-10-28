@@ -72,6 +72,7 @@ _DEFAULT_ALIGNMENT = [
     (ValidateSettings, "split_min_images", "SPLIT_MIN_IMAGES"),
     (ValidateSettings, "class_imbalance_info_ratio", "CLASS_IMBALANCE_INFO_RATIO"),
     (ValidateSettings, "orphan_labels_warn_ratio", "ORPHAN_LABELS_WARN_RATIO"),
+    (ValidateSettings, "image_integrity_error_ratio", "IMAGE_INTEGRITY_ERROR_RATIO"),
 ]
 
 

@@ -2,7 +2,7 @@
 """odp-validate:数据质检 CLI(只读,不改任何文件)。
 
 ★ 阈值来源(D4 配置化):configs/runtime/validate.yaml(odp-gen-config validate 生成),
-  三源合并 CLI > YAML > DEFAULT。15 个 check 统一从 ctx.setting() 读生效值 ——
+  三源合并 CLI > YAML > DEFAULT。16 个 check 统一从 ctx.setting() 读生效值 ——
   settings 优先, 读不到回落 common/constants.py 的常量(默认值的唯一出处)。
   --yaml 不传时:若 configs/runtime/validate.yaml 存在就用它,不存在就全用默认值。
 
@@ -32,7 +32,7 @@ logger = get_logger(base_path=paths.LOGGING_DIR, log_type="validate")
 
 def main(argv: Optional[List[str]] = None) -> int:
     p = argparse.ArgumentParser(prog="odp-validate",
-                                description="数据集质检(只读):15 项 check,按最严聚合成退出码")
+                                description="数据集质检(只读):16 项 check,按最严聚合成退出码")
     p.add_argument("yaml_path", help="数据集 yaml(如 configs/datasets/demo.yaml)")
     p.add_argument("--task", default=None, choices=Task.all(),
                    help="不传则取 yaml 里 odp_meta.task")

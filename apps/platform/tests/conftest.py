@@ -128,3 +128,47 @@ def demo_yaml_degenerate_and_extreme(tmp_path) -> Path:
         lbl.write_text(lbl.read_text(encoding="utf-8") + "0 0.50 0.50 0.0005 0.20\n",
                        encoding="utf-8")
     return _make_variant(tmp_path, "degenerate_and_extreme", mutate)
+
+
+def _tiny_png() -> bytes:
+    """1x1 灰度 PNG(纯 stdlib 构造, 不引入 Pillow 依赖)。"""
+    import struct
+    import zlib
+
+    def chunk(tag: bytes, data: bytes) -> bytes:
+        return (struct.pack(">I", len(data)) + tag + data
+                + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF))
+
+    ihdr = struct.pack(">IIBBBBB", 1, 1, 8, 0, 0, 0, 0)   # 1x1, 8bit, 灰度
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr)
+            + chunk(b"IDAT", zlib.compress(b"\x00\x00"))
+            + chunk(b"IEND", b""))
+
+
+def _fill_images(root: Path, payload: bytes) -> None:
+    for split_dir in (root / "images").iterdir():
+        if not split_dir.is_dir():
+            continue
+        for img in split_dir.iterdir():
+            if img.is_file():
+                img.write_bytes(payload)
+
+
+@pytest.fixture
+def demo_yaml_decodable(tmp_path) -> Path:
+    """把 demo 的 0 字节占位图全换成真实 1x1 PNG → 全部可解码。"""
+    png = _tiny_png()
+    return _make_variant(tmp_path, "decodable", lambda root: _fill_images(root, png))
+
+
+@pytest.fixture
+def demo_yaml_one_corrupt_image(tmp_path) -> Path:
+    """可解码数据集里混一张伪装扩展名的坏图 → image_integrity 应精确抓 1 张。"""
+    png = _tiny_png()
+
+    def mutate(root: Path):
+        _fill_images(root, png)
+        bad = sorted((root / "images" / "train").iterdir())[0]
+        bad.write_bytes(b"not an image at all\n")
+
+    return _make_variant(tmp_path, "one_corrupt", mutate)

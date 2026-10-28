@@ -50,7 +50,7 @@ def validate_dataset(yaml_path, task_type: Optional[str] = None,
         settings: D4 质检阈值(ValidateSettings)。None 时用 build_validate_config()
                   的默认值 —— 既有调用点(validate_dataset(yaml, ...))行为不变。
                   CLI(odp-validate --yaml)负责把 yaml 合并进来后传到这里;
-                  它也随 CheckContext 一起下发给 15 个 check(ctx.setting)。
+                  它也随 CheckContext 一起下发给 16 个 check(ctx.setting)。
     """
     t0 = time.perf_counter()
     run_id = run_id or datetime.now().strftime("%Y%m%d-%H%M%S")

@@ -143,10 +143,23 @@ lineage_max_detail: 20
 # details 预览统一上限(条)
 # 示例: 5, 20, 50
 # 提示:
-#   - label_format / bbox_within_image / box_geometry / duplicate_annotations / orphan_labels / split_uniqueness / stem_collision 共用
+#   - label_format / bbox_within_image / box_geometry / duplicate_annotations / orphan_labels / split_uniqueness / stem_collision / image_integrity 共用
 #   - 统一一个数字, 免得每份 report 预览长度都不一样
 #   - 只影响报告体积, 不影响判定
 details_preview_limit: 20
+
+
+#------------------------------------------------------------------------------
+# 图像完整性
+#------------------------------------------------------------------------------
+
+# 坏图占比 ERROR 线
+# 示例: 0.0, 0.01, 0.05
+# 提示:
+#   - 无法解码的图(0 字节 / 截断 / 伪装扩展名)占比 >= 此值 → ERROR
+#   - 默认 0.0: 一张坏图就算 ERROR —— 坏图会让训练 dataloader 直接崩
+#   - 调高 = 更宽容: 少量坏图降级为 WARNING
+image_integrity_error_ratio: 0.0
 
 
 #==============================================================================
