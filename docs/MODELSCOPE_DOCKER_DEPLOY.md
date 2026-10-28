@@ -62,6 +62,7 @@ python apps/web-backend/manage.py runserver 127.0.0.1:8510
 - 根目录 `requirements.txt` 是「一键部署」用的合并依赖；各子包自身的依赖声明仍保留：
   - 平台引擎：`apps/platform/pyproject.toml`
   - Django 后端：`apps/web-backend/requirements.txt`
+- 免费CPU容器先安装本机已验证的 `torch==2.14.1` / `torchvision==0.29.1` CPU轮子，再从官方PyPI安装其余依赖，避免通用依赖解析下载GPU专用大包。算法源码及本机GPU环境不受影响。
 
 ## 6. 纳入版本控制的二进制（一次性说明）
 
@@ -75,7 +76,7 @@ python apps/web-backend/manage.py runserver 127.0.0.1:8510
 
 ## 7. 已知限制
 
-- 免费 CPU 镜像推理较慢，适合演示；如需更快可升级 xGPU 资源。
+- 免费CPU镜像适合演示；使用GPU时还需要GPU资源及匹配的GPU版PyTorch镜像。
 - 数据集样本（`data/`）与训练运行产物（`runs/`）不进镜像，
   云端没有原始样本图时显示资源未接入，但仍可展示已提交的真实训练摘要和16/16数据检查记录；这些历史记录不是云端现场重训或复测。
 - 智能助手优先支持运行环境Secret中的 `DEEPSEEK_API_KEY`，默认官方地址与 `deepseek-flash`；既有 `FISH_LLM_*` 兼容配置保持可用。缺失或服务失败时回退到明确标记的规则说明。

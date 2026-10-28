@@ -24,7 +24,10 @@ WORKDIR /home/studio/PROJECT
 
 # 先装依赖，利用 Docker 层缓存
 COPY requirements.txt .
-RUN pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
+# The free Studio runs on CPU. Install the validated CPU pair first so the
+# generic requirements do not pull large CUDA libraries into this image.
+RUN python -m pip install torch==2.14.1 torchvision==0.29.1 --index-url https://download.pytorch.org/whl/cpu \
+    && python -m pip install -r requirements.txt --index-url https://pypi.org/simple/
 
 # Keep release/proxy settings after dependencies so changing them does not
 # invalidate the existing Python dependency layers.
