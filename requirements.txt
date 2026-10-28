@@ -1,4 +1,4 @@
-# 渔见 FishScope 一键 Docker 部署依赖（ModelScope 创空间）
+# ModelScope 创空间 Docker 部署依赖（Django 全栈版）
 # 注意：不要写 --extra-index-url（创空间会报错）
 # ---- Web 后端（Django + 鱼见门户）----
 Django>=5.2,<6

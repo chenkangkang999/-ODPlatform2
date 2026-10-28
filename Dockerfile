@@ -10,16 +10,10 @@ RUN npm run build
 
 FROM python:3.12-slim
 
-ARG FISH_RELEASE=source
 ENV PYTHONUNBUFFERED=1 \
     PYTHONUTF8=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_NO_CACHE_DIR=1 \
-    FISH_PUBLIC=1 \
-    FISH_ALLOWED_HOSTS=* \
-    FISH_TRUST_PROXY=1 \
-    FISH_TRUSTED_ORIGINS=https://cx2474556379-fish.ms.show \
-    FISH_RELEASE=${FISH_RELEASE}
+    PIP_NO_CACHE_DIR=1
 
 # OpenCV(headless) 运行时依赖 + ffmpeg（视频推理 H.264 转码需要）
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -31,6 +25,15 @@ WORKDIR /home/studio/PROJECT
 # 先装依赖，利用 Docker 层缓存
 COPY requirements.txt .
 RUN pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
+
+# Keep release/proxy settings after dependencies so changing them does not
+# invalidate the existing Python dependency layers.
+ARG FISH_RELEASE=source
+ENV FISH_PUBLIC=1 \
+    FISH_ALLOWED_HOSTS=* \
+    FISH_TRUST_PROXY=1 \
+    FISH_TRUSTED_ORIGINS=https://cx2474556379-fish.ms.show \
+    FISH_RELEASE=${FISH_RELEASE}
 
 # 拷入平台引擎、Django、配置及权重；网页始终由当前源码重新构建。
 COPY . .
