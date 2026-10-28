@@ -6,6 +6,12 @@ on:
       - 'apps/web-backend/**'
       - 'apps/web-frontend/**'
       - 'scripts/start_fish_*.ps1'
+      - 'scripts/sync_modelscope.py'
+      - 'scripts/tests/test_sync_modelscope.py'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'requirements.txt'
+      - 'docs/fish_data_validation.json'
       - '.github/workflows/fishscope-web.yml'
   push:
     branches: [main]
@@ -13,6 +19,12 @@ on:
       - 'apps/web-backend/**'
       - 'apps/web-frontend/**'
       - 'scripts/start_fish_*.ps1'
+      - 'scripts/sync_modelscope.py'
+      - 'scripts/tests/test_sync_modelscope.py'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'requirements.txt'
+      - 'docs/fish_data_validation.json'
       - '.github/workflows/fishscope-web.yml'
 
 permissions:
@@ -42,3 +54,5 @@ jobs:
         run: |
           npm ci
           npm run build
+      - name: ModelScope deployment helper tests
+        run: python -m unittest discover -s scripts/tests -p test_sync_modelscope.py

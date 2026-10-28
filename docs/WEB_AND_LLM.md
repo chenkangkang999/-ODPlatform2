@@ -33,7 +33,7 @@ ODPlatform 把“数据转换 → 质量检查 → YOLO 训练 → 评估 → �
 - 冻结划分：train 3652、val 458、test 450，seed 42。
 - README 独立评估记录：**验证集** mAP50 0.9073、mAP50-95 0.7442，Precision 0.8268、Recall 0.8874。
 - 训练末轮记录 mAP50 0.9095，属于另一口径，不能当作独立测试集结果。
-- 仓库没有提交原始数据、鱼类权重和完整运行报告。本机缺少时，网页明确显示待接入。
+- 仓库已包含部署用鱼类权重与真实训练摘要；原始训练数据和完整运行目录另行准备。缺少运行资源时网页明确显示状态。
 - 无逐类真实样本计数时，只展示类别字典，不捏造各类分布。无本机实验 CSV 时不生成训练曲线。
 
 ## 首次运行
@@ -76,7 +76,7 @@ powershell -ExecutionPolicy Bypass -File scripts/start_fish_web.ps1 -SkipBuild
 
 ### 本机已完成的接入
 
-用户提供的 `fish.zip` 已按平台原有转换、分层划分和质检流程接入：训练 3652、验证 458、测试 450，共 4560 张图片、6034 个框，15 项质检全部 PASS（新增 `image_integrity` 后重跑为 16 项）。数据契约指纹与仓库一致，数据指纹为 `1dc1c08a…`。本轮没有重新训练模型。
+用户提供的 `fish.zip` 已按平台原有转换、分层划分和质检流程接入：训练 3652、验证 458、测试 450，共 4560 张图片、6034 个框，2026-10-28 新增图片完整性检查后，真实重跑 16 项全部 PASS；4560 张图片均可完整解码，坏图为 0。数据契约指纹与仓库一致，数据指纹为 `1dc1c08a…`。本轮没有重新训练模型。
 
 为保留同学的共享配置，Web 使用本机忽略目录中的 `runs/web/dataset/fish.yaml`；只有 `integration.json` 的接入标记成功、对应配置存在时才优先使用。训练工作进程也传入这个配置，继续执行平台原有的身份检查。原 `apps/platform/configs/datasets/fish.yaml` 未改动。下载源码到新机器仍需准备自己的本地数据。
 
@@ -84,7 +84,7 @@ powershell -ExecutionPolicy Bypass -File scripts/start_fish_web.ps1 -SkipBuild
 
 `docs/fish_training_run.json` 保存可随源码提交的轻量训练摘要：YOLO11n、10 轮、512 输入、Batch 8，CSV 总时长 410.985 秒。训练结束后的验证汇总来自 `odp_audit.json`：mAP50 90.95%、mAP50–95 74.54%、Precision 82.70%、Recall 88.72%；CSV 第 10 轮的 mAP50 为 90.97%，单独存放。网页训练页显示这份真实 CSV 曲线，仪表盘展示可读的实验指标。原 README 独立 val 记录仍单列保留，未将导入记录标为本机新训练或测试集成绩。
 
-模型 SHA256：`172f8f54747f7fe8bbf810a29ae514a58c4b4db2067fb8ed4b96e9307fcb76ab`。已在 CPU 上完成单张验证图真实识别（Mola，0.898549）。本轮未重训或重新跑完整验证集；源码不包含原数据、二进制权重及原始训练媒体，其他机器运行前需另行准备模型。
+模型 SHA256：`172f8f54747f7fe8bbf810a29ae514a58c4b4db2067fb8ed4b96e9307fcb76ab`。已在 CPU 上完成单张验证图真实识别（Mola，0.898549）。本轮未重训或重新跑完整验证集；仓库目前已跟踪该部署权重；原始数据与训练媒体未提交。
 
 ### 查看监控
 
@@ -92,33 +92,24 @@ powershell -ExecutionPolicy Bypass -File scripts/start_fish_web.ps1 -SkipBuild
 
 上传图片或视频后，选择本地鱼类权重与参数，点击“开始推理”，等待任务完成。
 视频采用逐帧或间隔帧检测，产物包括标注媒体和检测报告。视频统计的“检测框次”会在多帧重复累计，**不是独立鱼的数量**。
-视频画面只在本机处理。点击智能解释时，后端向已配置的模型服务发送结构化检测摘要，不发送原始视频。
+视频在当前服务运行环境处理：本机预览由电脑处理，创空间由服务器处理。点击智能解释时，仅向已配置的模型服务发送项目资料、问题与结构化检测摘要。
 模型只能解释检测证据和局限，不能从框数推断鱼类健康、生态因果或实际种群数量。
 
-## 配置大模型
+## 接入 DeepSeek 与通俗解释
 
-推荐复制示例文件到本机配置，再填写这三项：
+后端现在直接识别 `DEEPSEEK_API_KEY`，不需要再重复设置通用接口的三项变量。默认官方地址为 `https://api.deepseek.com`，默认模型为 `deepseek-flash`；可通过 `DEEPSEEK_BASE_URL`、`DEEPSEEK_MODEL` 覆盖。默认使用非思考模式，优先快速返回简洁解释。依据：[DeepSeek官方接入文档](https://api-docs.deepseek.com/)、[思考模式开关](https://api-docs.deepseek.com/guides/thinking_mode/)。
 
-```powershell
-Copy-Item apps/web-backend/.env.example apps/web-backend/.env
-```
+本机复制 `apps/web-backend/.env.example` 为同目录 `.env`，只填写 `DEEPSEEK_API_KEY` 后重启后端。已经存在的进程环境变量优先，真实 `.env` 被Git忽略，Docker构建也递归排除这些文件。创空间使用运行环境的Secret保存同名密钥，不写入前端、Dockerfile或提交记录。
 
-编辑 `apps/web-backend/.env` 中的 `FISH_LLM_BASE_URL`、`FISH_LLM_MODEL`、`FISH_LLM_API_KEY` 后重新启动后端。
-入口会自动加载这个文件；已设置的环境变量优先。真实 `.env` 被 `.gitignore` 排除，仓库只提交空值示例。
-密钥只保存在后端，不返回前端，也不写入 `.gitignore` 的正文。不要把真实密钥写入 Git。
-也可在启动 Django 的终端中设置：
+已有 `FISH_LLM_BASE_URL` / `FISH_LLM_MODEL` / `FISH_LLM_API_KEY` 兼容配置继续独立优先；不把DeepSeek密钥自动填入其他服务地址，避免混用凭据。
 
-```powershell
-$env:FISH_LLM_BASE_URL = 'https://your-provider.example/v1'
-$env:FISH_LLM_MODEL = 'your-model-name'
-$env:FISH_LLM_API_KEY = '<在本机填写你的密钥>'
-powershell -ExecutionPolicy Bypass -File scripts/start_fish_web.ps1 -SkipBuild
-```
+助手面向没有机器学习背景的用户，先说结论，再用短句解释数字：模型打分、累计画出鱼框的次数、一张画面最多几个框、找鱼并画准位置的综合评分。专业名词只有在用户提到时才用白话说明，避免堆砌缩写和公式。保留“同一条鱼可能重复出现”“模型打分不等于真实正确率”等必要边界。
 
-配置齐全后，页面只显示“大模型已配置”状态；实际请求成功后才显示模型回答。
-没有配置时，助手仍能解释项目、数据划分和检测报告，但会明确标记为 **本地规则说明**。
-请求失败会显示失败原因或明确的本地回退状态，不把规则模板伪装成大模型回答。
-这里只检查配置是否齐全，**已配置不等于已经验证服务连通**。
+在推理页完成识别后点“交给助手解释”，当前任务统计自动关联；只发送项目资料与统计，不发送原视频。配置齐全仅表示有配置，单条回答显示“DeepSeek回答”才代表实际调用成功。缺少密钥或请求失败会回退为明确标记的本地规则说明，并在聊天中显示最近一次回退通知。
+
+2026-10-28 已用当前电脑环境中的密钥完成真实项目资料和既有视频检测统计两次调用，返回模式均为 `llm`。这项本机核验不代表创空间已经配置同一密钥；云端需单独发布和核验。
+
+本轮新数据检查的可移植摘要在 `docs/fish_data_validation.json`，首页优先显示当前环境实测，否则显示这份16/16检查记录；云端展示导入记录不代表已在云端重新检查原始数据。
 
 ## Gradio 演示
 
@@ -147,7 +138,7 @@ npm run build
 - `apps/web-backend/`：Django API、本地任务、YOLO 与 LLM 服务。
 - `scripts/start_fish_web.ps1`、`scripts/start_fish_gradio.ps1`：本地启动。
 - `docs/fish_project_evidence.json`：带来源的项目事实记录。
-- 本地上传、任务产物、依赖、权重和密钥均在 Git 忽略范围内。
+- 本地上传、任务产物、依赖和密钥均不提交；部署用鱼类权重已经纳入版本控制。
 
 通过独立分支和 PR 提交，供组员审阅后合并。未修改共享平台引擎、训练配置或已有 Gradio 配置。
 原有 README 内容保留，新增说明见本文件及 `FISHSCOPE_HANDOFF.md`。

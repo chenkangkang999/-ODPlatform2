@@ -101,4 +101,4 @@ class TrainingEvidenceTests(SimpleTestCase):
             result = assistant.answer("mAP是多少？")
         self.assertIn("90.95%", result["answer"])
         self.assertIn("90.73%", result["answer"])
-        self.assertIn("不是独立测试集成绩", result["answer"])
+        self.assertIn("不是最后留作考试的那批图片的成绩", result["answer"])

@@ -1,0 +1,85 @@
+{
+  "checked_at": "2026-10-28T15:05:38.101563+08:00",
+  "images": 4560,
+  "instances": 6034,
+  "corrupt_images": 0,
+  "overall": "PASS",
+  "checks_passed": 16,
+  "checks_total": 16,
+  "split_counts": {
+    "train": 3652,
+    "val": 458,
+    "test": 450
+  },
+  "checks": [
+    {
+      "name": "annotation_coverage",
+      "severity": "PASS"
+    },
+    {
+      "name": "bbox_within_image",
+      "severity": "PASS"
+    },
+    {
+      "name": "box_geometry",
+      "severity": "PASS"
+    },
+    {
+      "name": "class_balance",
+      "severity": "PASS"
+    },
+    {
+      "name": "class_presence",
+      "severity": "PASS"
+    },
+    {
+      "name": "duplicate_annotations",
+      "severity": "PASS"
+    },
+    {
+      "name": "fingerprint_match",
+      "severity": "PASS"
+    },
+    {
+      "name": "image_integrity",
+      "severity": "PASS"
+    },
+    {
+      "name": "label_format",
+      "severity": "PASS"
+    },
+    {
+      "name": "manifest_lineage",
+      "severity": "PASS"
+    },
+    {
+      "name": "orphan_labels",
+      "severity": "PASS"
+    },
+    {
+      "name": "pair_existence",
+      "severity": "PASS"
+    },
+    {
+      "name": "split_presence",
+      "severity": "PASS"
+    },
+    {
+      "name": "split_uniqueness",
+      "severity": "PASS"
+    },
+    {
+      "name": "stem_collision",
+      "severity": "PASS"
+    },
+    {
+      "name": "yaml_schema",
+      "severity": "PASS"
+    }
+  ],
+  "schema_version": 1,
+  "source_revision": "a8d0c03708d5b7cffdcaa435ddd52dcfe51616b5",
+  "provenance": "provided_validation_record",
+  "measured_on_origin_machine": true,
+  "note": "2026-10-28 对接入的 fish 数据执行的真实检查记录；在新部署环境展示该记录不代表已在该环境重新检查。"
+}

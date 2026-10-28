@@ -1,13 +1,25 @@
 # 渔见 FishScope · 淡水鱼识别 —— ModelScope 创空间 Docker 部署
 # 单容器同时提供 Django 后端 API 与 Vue 前端静态页面（Django 同源 serve dist）
+FROM node:22-bookworm-slim AS frontend
+
+WORKDIR /build/web
+COPY apps/web-frontend/package.json apps/web-frontend/package-lock.json ./
+RUN npm ci
+COPY apps/web-frontend/ ./
+RUN npm run build
+
 FROM python:3.12-slim
 
+ARG FISH_RELEASE=source
 ENV PYTHONUNBUFFERED=1 \
     PYTHONUTF8=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1 \
     FISH_PUBLIC=1 \
-    FISH_ALLOWED_HOSTS=*
+    FISH_ALLOWED_HOSTS=* \
+    FISH_TRUST_PROXY=1 \
+    FISH_TRUSTED_ORIGINS=https://cx2474556379-fish.ms.show \
+    FISH_RELEASE=${FISH_RELEASE}
 
 # OpenCV(headless) 运行时依赖 + ffmpeg（视频推理 H.264 转码需要）
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -20,8 +32,9 @@ WORKDIR /home/studio/PROJECT
 COPY requirements.txt .
 RUN pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
 
-# 再拷全部代码（平台引擎 / Django 后端 / 前端 dist / 配置 / 权重）
+# 拷入平台引擎、Django、配置及权重；网页始终由当前源码重新构建。
 COPY . .
+COPY --from=frontend /build/web/dist/ ./apps/web-frontend/dist/
 
 # 预建任务运行时目录（推理/训练任务的输出与状态写到这里）
 RUN mkdir -p runs/web

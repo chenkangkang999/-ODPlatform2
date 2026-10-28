@@ -9,6 +9,7 @@ from pathlib import Path
 DEFAULT_ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 ALLOWED_KEYS = frozenset({
     "FISH_LLM_BASE_URL", "FISH_LLM_API_KEY", "FISH_LLM_MODEL",
+    "DEEPSEEK_API_KEY", "DEEPSEEK_BASE_URL", "DEEPSEEK_MODEL",
     "FISH_ENGINE_PYTHON", "FISH_DJANGO_SECRET_KEY",
 })
 

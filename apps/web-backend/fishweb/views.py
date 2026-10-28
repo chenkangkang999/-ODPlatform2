@@ -15,6 +15,36 @@ def error(message, status=400, code="invalid_request"):
     return JsonResponse({"error": str(message), "code": code}, status=status, json_dumps_params={"ensure_ascii": False})
 
 
+def normalized_origin(value):
+    """Compare complete origins; never trust a suffix match or an arbitrary URL."""
+    if not value or any(character.isspace() for character in value):
+        return None
+    try:
+        parsed = urlparse(value)
+        if parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.username or parsed.password:
+            return None
+        port = parsed.port or (443 if parsed.scheme == "https" else 80)
+        return parsed.scheme, parsed.hostname.lower(), port
+    except ValueError:
+        return None
+
+
+def mutation_origin_allowed(request):
+    source = request.headers.get("Origin") or request.headers.get("Referer")
+    source_origin = normalized_origin(source)
+    # Explicit public origins handle reverse proxies whose internal Host differs
+    # from the browser URL. Other studios and similarly named domains stay blocked.
+    trusted = {normalized_origin(value.strip()) for value in
+               os.environ.get("FISH_TRUSTED_ORIGINS", "").split(",")}
+    trusted.discard(None)
+    expected = normalized_origin(request.build_absolute_uri("/"))
+    if source and (source_origin is None or source_origin not in trusted | {expected}):
+        return False
+    if request.headers.get("Sec-Fetch-Site") == "cross-site" and source_origin not in trusted:
+        return False
+    return True
+
+
 class LocalOnlyMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -25,13 +55,9 @@ class LocalOnlyMiddleware:
         if os.environ.get("FISH_PUBLIC") != "1" and request.META.get("REMOTE_ADDR", "127.0.0.1") not in {"127.0.0.1", "::1"}:
             return error("此服务仅供本机预览。", 403)
         if request.method not in {"GET", "HEAD", "OPTIONS"}:
-            if request.headers.get("Sec-Fetch-Site") == "cross-site":
-                return error("仅接受同源请求。", 403)
-            origin = request.headers.get("Origin")
-            referer = request.headers.get("Referer")
-            source = origin or referer
-            if source and urlparse(source).netloc != request.get_host():
-                return error("仅接受同源请求。", 403)
+            if not mutation_origin_allowed(request):
+                return error("请求来源未获允许，请从项目页面重新操作；部署者请检查公开访问域名配置。", 403,
+                             code="untrusted_origin")
         response = self.get_response(request)
         response["X-Content-Type-Options"] = "nosniff"
         response["Referrer-Policy"] = "same-origin"

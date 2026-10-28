@@ -5,6 +5,7 @@
 **/venv/
 **/env/
 **/node_modules/
+apps/web-frontend/dist/
 
 # Python 缓存
 **/__pycache__/
@@ -24,5 +25,16 @@ apps/platform/logging/
 *.log
 .env
 .env.*
+**/.env
+**/.env.*
+!**/.env.example
+.secrets/
+**/.secrets/
+secrets/
+**/secrets/
+.netrc
+**/.netrc
+**/*.key
+**/*.pem
 tmp/
 temp/

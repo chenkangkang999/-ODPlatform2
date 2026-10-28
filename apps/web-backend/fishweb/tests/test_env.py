@@ -77,3 +77,11 @@ class LocalEnvironmentTests(TestCase):
             "FISH_ENGINE_PYTHON": "engine-python",
             "FISH_DJANGO_SECRET_KEY": "local-example-value",
         })
+
+    def test_deepseek_settings_are_loaded_without_expanding_values(self):
+        destination, loaded = self.load_text(
+            "DEEPSEEK_API_KEY=unit-test-key\nDEEPSEEK_MODEL=chosen-model\n"
+            "DEEPSEEK_BASE_URL=https://api.deepseek.com\n"
+        )
+        self.assertEqual(set(loaded), {"DEEPSEEK_API_KEY", "DEEPSEEK_MODEL", "DEEPSEEK_BASE_URL"})
+        self.assertEqual(destination["DEEPSEEK_MODEL"], "chosen-model")

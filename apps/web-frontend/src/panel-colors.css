@@ -174,3 +174,18 @@
 @media (prefers-reduced-motion: reduce) {
   .resource-track > i { transition: none; }
 }
+
+/* Show only the latest service fallback message, close to the chat input. */
+.aquatic-shell .water-workspace .chat-notice {
+  margin: 0 28px 16px;
+  padding: 12px 16px;
+  border: 1px solid #c9e5f2;
+  border-radius: 10px;
+  background: #edf7fc;
+  color: #4b7188;
+  font-size: 14px;
+  line-height: 1.7;
+}
+@media (max-width: 650px) {
+  .aquatic-shell .water-workspace .chat-notice { margin-inline: 20px; }
+}

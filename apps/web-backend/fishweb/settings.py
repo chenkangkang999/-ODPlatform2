@@ -10,6 +10,9 @@ DEBUG = False
 ALLOWED_HOSTS = os.environ.get(
     "FISH_ALLOWED_HOSTS", "127.0.0.1,localhost,[::1],testserver"
 ).split(",")
+# Only enable this behind the deployment proxy, which supplies these headers.
+USE_X_FORWARDED_HOST = os.environ.get("FISH_TRUST_PROXY") == "1"
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https") if USE_X_FORWARDED_HOST else None
 ROOT_URLCONF = "fishweb.urls"
 MIDDLEWARE = ["django.middleware.security.SecurityMiddleware", "fishweb.views.LocalOnlyMiddleware"]
 INSTALLED_APPS = []

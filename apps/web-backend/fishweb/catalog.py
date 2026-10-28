@@ -11,6 +11,8 @@ from pathlib import Path
 
 import yaml
 
+from .llm_config import resolve_llm_config
+
 ROOT = Path(__file__).resolve().parents[3]
 STATE = ROOT / "runs/web"
 MODEL_ROOT = ROOT / "models"
@@ -177,8 +179,25 @@ def local_validation():
     checks = sum(isinstance(row, dict) and row.get("severity") == "PASS" for row in results)
     if results and checks == len(results):
         validation.update(measured_locally=True, overall="PASS", checks_passed=checks,
-                          checks_total=len(results), source=relative, created_at=integration.get("created_at"))
+                          checks_total=len(results), source=relative,
+                          created_at=integration.get("validation_checked_at") or integration.get("created_at"))
     return validation
+
+
+def validation_record():
+    """Portable actual check results, distinct from measurements on this server."""
+    record = read_json(ROOT / "docs/fish_data_validation.json", {})
+    if not isinstance(record, dict) or record.get("provenance") != "provided_validation_record":
+        return None
+    checks = record.get("checks")
+    if (not isinstance(checks, list) or not checks or record.get("overall") != "PASS"
+            or record.get("checks_total") != len(checks)
+            or record.get("checks_passed") != len(checks)
+            or any(not isinstance(row, dict) or row.get("severity") != "PASS" for row in checks)):
+        return None
+    fields = ("checked_at", "images", "instances", "corrupt_images", "overall", "checks_passed",
+              "checks_total", "split_counts", "provenance", "note")
+    return {**{key: record[key] for key in fields if key in record}, "measured_locally": False}
 
 
 def dataset_info():
@@ -198,6 +217,7 @@ def dataset_info():
                   "instances": sum(distributions), "dataset_yaml": dataset_yaml_path().relative_to(ROOT).as_posix() if contained(dataset_yaml_path(), ROOT) else None,
                   "message": "已接入本地鱼类数据" if has_data else "仓库不包含数据文件；需放入 data/processed/fish 并保留原有划分和血缘章。"},
         "validation": local_validation() if has_data else {"documented": "15/15 PASS", "measured_locally": False},
+        "validation_record": validation_record(),
         "samples": [{"name": p.name, "url": "/api/dataset/sample/" + str(i) + "/"} for i, p in enumerate(images)],
     }
 
@@ -264,7 +284,7 @@ def experiments():
 
 
 def llm_configured():
-    return all(os.environ.get(key, "").strip() for key in ("FISH_LLM_BASE_URL", "FISH_LLM_API_KEY", "FISH_LLM_MODEL"))
+    return resolve_llm_config().configured
 
 
 @lru_cache(maxsize=2)
@@ -287,9 +307,9 @@ def status():
             "model_configuration": model_configuration(models),
             "engine": {"available": engine, "python": ENGINE_PYTHON,
                        "message": "本地YOLO环境就绪" if engine else "需安装平台核心依赖后运行推理"},
-            "llm": {"configured": llm_configured(), "mode": "llm" if llm_configured() else "local",
-                    "model": os.environ.get("FISH_LLM_MODEL", "") if llm_configured() else "本地规则解释",
-                    "disclosure": "仅发送检测统计与问题给配置的大模型服务，不发送视频原文件。"},
+            "llm": resolve_llm_config().public_status(),
+            "deployment": {"mode": "cloud" if os.environ.get("FISH_PUBLIC") == "1" else "local",
+                           "release": os.environ.get("FISH_RELEASE", "local")},
             "gradio": {"available": importlib.util.find_spec("gradio") is not None,
                        "url": "http://127.0.0.1:7860", "command": "odp-demo"},
-            "local_only": True}
+            "local_only": os.environ.get("FISH_PUBLIC") != "1"}

@@ -9,7 +9,7 @@
 - 后端：Django（`apps/web-backend`），一个进程同时提供：
   - `/api/...` 接口（状态、数据集、任务、推理、智能助手）
   - 非 `/api/` 路径：同源返回前端静态文件 `apps/web-frontend/dist/index.html`
-- 前端：Vue3 + Vite（`apps/web-frontend`），已 `vite build` 到 `dist/`，容器内无需 Node。
+- 前端：Vue3 + Vite（`apps/web-frontend`），Docker的Node 22阶段从当前源码运行 `npm ci` 和 `npm run build`，Python运行阶段只接收新构建的dist，不依赖本机旧产物。
 - 引擎：`apps/platform/src/od_platform`（训练走 `odp-train` 子进程，推理走 `fishweb/worker.py`）。
 - 模型：`models/trained/train-20261027-124755-fish-yolo11n-best.pt`（YOLO11n，33 类淡水鱼）。
 - 视频转码：ffmpeg（libx264，无声 H.264）。
@@ -41,7 +41,7 @@
    git push studio master
    ```
    认证用户名固定为 `oauth2`，密码用「访问令牌」页生成的有写权限的 Token。
-5. 首次构建约 15–25 分钟（安装 torch、ffmpeg 等），状态变为「运行中」后，
+5. 等待构建及部署完成（实际耗时取决于依赖下载与平台资源），状态变为「运行中」后，
    页面即本地 `127.0.0.1:8510` 的完整渔见门户。
 
 ## 4. 本地运行
@@ -77,6 +77,15 @@ python apps/web-backend/manage.py runserver 127.0.0.1:8510
 
 - 免费 CPU 镜像推理较慢，适合演示；如需更快可升级 xGPU 资源。
 - 数据集样本（`data/`）与训练运行产物（`runs/`）不进镜像，
-  「数据理解」页面的样本图与历史训练记录在云端为空属正常。
-- 智能助手（LLM）需配置 `FISH_LLM_BASE_URL` / `FISH_LLM_API_KEY` / `FISH_LLM_MODEL`，
-  未配置时自动降级为规则说明。
+  云端没有原始样本图时显示资源未接入，但仍可展示已提交的真实训练摘要和16/16数据检查记录；这些历史记录不是云端现场重训或复测。
+- 智能助手优先支持运行环境Secret中的 `DEEPSEEK_API_KEY`，默认官方地址与 `deepseek-flash`；既有 `FISH_LLM_*` 兼容配置保持可用。缺失或服务失败时回退到明确标记的规则说明。
+
+## 8. 当前空间的代理来源与新版页面
+
+当前Docker为 `https://cx2474556379-fish.ms.show` 设置精确的 `FISH_TRUSTED_ORIGINS`，并通过 `FISH_TRUST_PROXY=1` 读取可信部署代理提供的外部Host/HTTPS头。合法的上传、训练与聊天请求可通过代理进入接口；其他创空间、相似域名和不在清单内的网站继续被拒绝。迁移空间域名时要同步修改这个明确清单，不使用任意域名通配。
+
+此前“仅接受同源请求”来自浏览器外部Origin与容器内部Host不一致。现在来源检查使用完整的协议、主机和端口，支持配置的精确外部来源。此设置需要随新代码重新部署，刷新旧容器不会生效。
+
+更新GitHub不会自动更新独立的创空间仓库。需要把同一版已提交源码同步到创空间的master并重新部署；新Docker会从源码构建最新页面。`scripts/sync_modelscope.py` 提供准备和发布入口，具体参数见 `--help`。魔搭可写令牌放在项目目录外本地 `.env.modelscope` 中，仅由部署工具使用；不放后端网页配置、不提交Git、不嵌入remote URL。
+
+云端DeepSeek密钥应保存为创空间Secret，原始数据和本地任务目录不随同步上传。发布完成后核对首页16/16检查记录、新版助手文案，并实际上传短视频与提问，确认来源校验和远程解释都工作。
